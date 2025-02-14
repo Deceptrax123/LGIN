@@ -4,6 +4,29 @@ import torch.nn.functional as F
 from torch.nn import Module
 
 
+def get_dim_act_curv(args):
+    if not args.act:
+        def act(x): return x
+    else:
+        act = getattr(F, args.act)
+    acts = [act] * (args.num_layers - 1)
+    dims = [args.feat_dim] + ([args.dim] * (args.num_layers - 1))
+    if args.task in ['lp']:
+        dims += [args.dim]
+        acts += [act]
+        n_curvatures = args.num_layers
+    else:
+        n_curvatures = args.num_layers - 1
+    if args.c is None:
+        curvatures = [nn.Parameter(torch.Tensor([1.]))
+                      for _ in range(n_curvatures)]
+    else:
+        curvatures = [torch.tensor([args.c]) for _ in range(n_curvatures)]
+        if not args.cuda == -1:
+            curvatures = [curv.to(args.device) for curv in curvatures]
+    return dims, acts, curvatures
+
+
 class SpecialSpmmFunction(torch.autograd.Function):
     """Special function for only sparse region backpropagation layer."""
     @staticmethod
