@@ -1,5 +1,3 @@
-"""Base manifold."""
-
 from torch.nn import Parameter
 
 
@@ -14,6 +12,10 @@ class Manifold(object):
 
     def sqdist(self, p1, p2, c):
         """Squared distance between pairs of points."""
+        raise NotImplementedError
+
+    def dist(self, p1, p2, c):
+        """Distance between pair of points"""
         raise NotImplementedError
 
     def egrad2rgrad(self, p, dp, c):
@@ -60,7 +62,7 @@ class Manifold(object):
         """Initializes random weigths on the manifold."""
         raise NotImplementedError
 
-    def inner(self, p, c, u, v=None, keepdim=False):
+    def inner(self, p, c, u, v=None):
         """Inner product for tangent vectors at point x."""
         raise NotImplementedError
 
@@ -68,8 +70,65 @@ class Manifold(object):
         """Parallel transport of u from x to y."""
         raise NotImplementedError
 
-    def ptransp0(self, x, u, c):
-        """Parallel transport of u from the origin to y."""
+    # the def defined by mine
+    def l_inner(self, x, y, keep_dim):
+        # Lorentz inner
+        raise NotImplementedError
+
+    def induced_distance(self, x, y, c):
+        #         metric distance
+        raise NotImplementedError
+
+    def lorentzian_distance(self, x, y, c):
+        # lorzentzian distance
+        raise NotImplementedError
+
+    def exp_map_x(self, p, dp, c, is_res_normalize, is_dp_normalize):
+        raise NotImplementedError
+
+    def exp_map_zero(self, dp, c, is_res_normalize, is_dp_normalize):
+        raise NotImplementedError
+
+    def log_map_x(self, x, y, c, is_tan_normalize):
+        raise NotImplementedError
+
+    def log_map_zero(self, y, c, is_tan_normalize):
+        raise NotImplementedError
+
+    def matvec_proj(self, m, x, c):
+        raise NotImplementedError
+
+    def matvecbias_proj(self, m, x, b, c):
+        raise NotImplementedError
+
+    def matvec_regular(self, m, x, c):
+        raise NotImplementedError
+
+    def matvecbias_regular(self, m, x, b, c):
+        raise NotImplementedError
+
+    def normalize_tangent_zero(self, p_tan, c):
+        raise NotImplementedError
+
+    def lorentz_centroid(self, weight, x, c):
+        raise NotImplementedError
+
+    def normalize_input(self, x, c):
+        raise NotImplementedError
+
+    def normlize_tangent_bias(self, x, c):
+        raise NotImplementedError
+
+    def proj_tan_zero(self, u, c):
+        raise NotImplementedError
+
+    def lorentz2poincare(self, x, c):
+        raise NotImplementedError
+
+    def poincare2lorentz(self, x, c):
+        raise NotImplementedError
+
+    def _lambda_x(self, x, c):
         raise NotImplementedError
 
 
