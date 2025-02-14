@@ -1,4 +1,4 @@
-from layers.hyp import LorentzAct, LorentzLinear, LorentzAgg
+from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
 from torch.nn import Module
 
 
