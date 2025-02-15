@@ -33,9 +33,7 @@ class Classifier(Module):
         self.agg = LorentzAgg(self.manifold, c=self.co_out,
                               use_att=use_att, in_features=num_classes, dropout=dropout)
 
-    def forward(self, x, adj):
-        input = (x, adj)
-
+    def forward(self, input):
         h = self.gin.forward(input)
 
         h_tangential = self.manifold.log_map_zero(h, self.c_out)
