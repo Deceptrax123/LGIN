@@ -1,5 +1,34 @@
 from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
 from torch.nn import Module
+from torch import Tensor
+
+
+class LorentzGIN(Module):
+    def __init__(self, manifold, eps, in_features, c_in, nn, use_bias, use_att):
+        super(LorentzGIN, self).__init__()
+
+        self.c_in = c_in
+        self.manifold = manifold
+        self.agg = LorentzAgg(manifold, self.c_in,
+                              use_att, in_features, use_bias)
+        self.nn = nn
+        self.eps = eps
+
+    def forward(self, input):
+        x, adj = input
+
+        # Map to hyperbolid space
+        x = self.manifold.exp_map_zero(x, self.c_in)
+        if isinstance(x, Tensor):
+            x = (x, x)
+        out = self.agg.forward(x=x, adj=adj)  # Calculate the Frechet Mean
+
+        x_r = x[1]
+        if x_r is not None:
+            out = self.manifold.exp_map_zero(self.manifold.log_map_zero(
+                out, self.c_in)+(1+self.eps)*self.manifold.log_map_zero(x_r, self.c_in))
+
+        return self.nn(out)
 
 
 class LorentzGNN(Module):

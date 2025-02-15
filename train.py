@@ -1,17 +1,18 @@
 from torch_geometric.datasets import TUDataset
 from torch_geometric.loader import DataLoader
-from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE
+from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS
 from torch_geometric.utils import to_dense_adj
 from metrics import classification_binary_metrics, classification_multiclass_metrics
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
+from models.model import Classifier
 import wandb
 import os
 from dotenv import load_dotenv
 from torch import nn
 import torch
 
-# TODO import and define model
+# DONE import and define model
 # TODO save weights
 
 
@@ -44,7 +45,7 @@ def train_epoch():
                 probs, data.y.int(), dataset.num_classes)
 
         epoch_loss += loss.item()
-        epoch_acc += epoch_acc.item()
+        epoch_acc += acc.item()
 
     return epoch_loss/(step+1), epoch_acc/(step+1)
 
@@ -167,10 +168,21 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_set, **params)
     test_loader = DataLoader(test_set, **params)
 
+    model = Classifier(
+        eps=EPS,
+        num_layers_mlp=NUM_LAYERS_MLP,
+        num_classes=dataset.num_classes,
+        c_in=C_IN,
+        c_out=C_OUT,
+        in_features=dataset.num_node_features,
+        dropout=DROPOUT,
+        use_att=USE_ATT,
+        use_bias=USE_BIAS
+    )
     optimizer = RiemannianAdam(
-        params=model.parameters(), lr=LR, weight_decary=EPSILON)
+        params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-        optimizer=optimizer, T0=50)
+        optimizer=optimizer, T_0=50)
     if dataset.num_classes == 2:
         loss_function = nn.BCEWithLogitsLoss()
     else:
