@@ -20,7 +20,7 @@ def train_epoch():
         x, adj = data.x, data.edge_index
         input = (x, adj)
 
-        logits, probs = model(input)
+        logits, probs = model(input, batch=data.batch)
 
         loss = loss_function(logits, data.y)
 
@@ -55,7 +55,7 @@ def val_epoch():
         x, adj = data.x, to_dense_adj(data.edge_index, batch=data.batch)
         input = (x, adj)
 
-        logits, probs = model(input)
+        logits, probs = model(input, batch=data.batch)
         loss = loss_function(logits, data.y.int())
 
         if dataset.num_classes == 2:
@@ -77,7 +77,7 @@ def test():
         x, adj = data.x, to_dense_adj(data.edge_index, batch=data.batch)
         input = (x, adj)
 
-        logits, probs = model(input)
+        logits, probs = model(input, batch=data.batch)
         if dataset.num_classes == 2:
             acc = classification_binary_metrics(probs, data.y.int())
         else:

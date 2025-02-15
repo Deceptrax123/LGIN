@@ -19,7 +19,7 @@ class LorentzGIN(Module):
         x, adj = input
         adj = to_torch_coo_tensor(adj)
 
-        # Map to hyperbolid space
+        # Map to hyperboloid space
         x = self.manifold.exp_map_zero(x, self.c_in)
         if isinstance(x, Tensor):
             x = (x, x)
@@ -33,8 +33,6 @@ class LorentzGIN(Module):
             pt_xr = self.manifold.ptransp(x=x_r, y=out, v=log_x_r, c=self.c_in)
             out = self.manifold.exp_map_zero(
                 dp=log_out+(1+self.eps)*pt_xr, c=self.c_in)
-
-        print(out.size())
 
         return self.nn(out)
 

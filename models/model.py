@@ -1,6 +1,7 @@
 import manifolds
 from layers.lgnn_layer import LorentzGIN
 from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
+from torch_geometric.nn import global_mean_pool
 import numpy as np
 import torch
 from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax
@@ -15,7 +16,7 @@ class Classifier(Module):
         if num_classes == 2:
             act = Sigmoid()
         else:
-            act = Softmax()
+            act = Softmax(dim=1)
         self.gin = LorentzGIN(
             manifold=self.manifold,
             eps=eps,
@@ -27,23 +28,25 @@ class Classifier(Module):
             use_bias=use_bias
         )
         self.classifier = LorentzLinear(
-            self.manifold, in_features=128*3, out_features=num_classes, c=self.c_out, dropout=dropout, use_bias=use_bias)
+            self.manifold, in_features=(128*3)-1, out_features=num_classes, c=self.c_out, dropout=dropout, use_bias=use_bias)
         self.prob = LorentzAct(
             self.manifold, c_in=self.c_out, c_out=self.c_out, act=act)
-        self.agg = LorentzAgg(self.manifold, c=self.c_out,
-                              use_att=use_att, in_features=num_classes, dropout=dropout)
 
-    def forward(self, input):
+    def forward(self, input, batch):
+        x, edge_index = input
+
+        input = (x, edge_index)
         h = self.gin.forward(input)
 
         h_tangential = self.manifold.log_map_zero(h, c=self.c_out)
-        h_tangential_mean = torch.mean(h_tangential.T, dim=1).T
+        h_tangential_mean = global_mean_pool(h_tangential, batch)
 
-        h_norm_tang = self.manifold.normalize_tangent_zero(
-            p_tan=h_tangential_mean, c=self.c_out)
-        h_classify = self.classifier(h_norm_tang)
+        h_exp = self.manifold.exp_map_zero(h_tangential_mean, c=self.c_out)
+        h_classify = self.classifier(h_exp)
 
-        return h_classify, self.prob(h_classify)
+        h_classify_log = self.manifold.log_map_zero(h_classify, c=self.c_out)
+
+        return h_classify_log, self.prob(h_classify)
 
 
 class GinMLP(Module):
@@ -61,12 +64,12 @@ class GinMLP(Module):
             c_in, c_out = self.curvatures[i], self.curvatures[i+1]
             if i == 0:
                 block = Sequential(
-                    LorentzLinear(manifold=self.manifold, in_features=in_features,
+                    LorentzLinear(manifold=self.manifold, in_features=in_features-1,
                                   out_features=128, c=c_in, dropout=dropout, use_bias=use_bias),
                     LorentzAct(manifold=self.manifold, c_in=c_in, c_out=c_out, act=ReLU()))
             else:
                 block = Sequential(
-                    LorentzLinear(manifold=self.manifold, in_features=128*i,
+                    LorentzLinear(manifold=self.manifold, in_features=(128*i)-1,
                                   out_features=128*(i+1), c=c_in, dropout=dropout, use_bias=use_bias),
                     LorentzAct(manifold=self.manifold, c_in=c_in,
                                c_out=c_out, act=ReLU())

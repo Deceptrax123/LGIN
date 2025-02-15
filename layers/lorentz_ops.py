@@ -150,7 +150,7 @@ class LorentzAct(Module):
 
     def forward(self, x):
         xt = self.act(self.manifold.log_map_zero(x, c=self.c_in))
-        xt = self.manifold.normalize_tangent_vector(xt, self.c_in)
+        xt = self.manifold.normalize_tangent_zero(xt, self.c_in)
 
         return self.manifold.exp_map_zero(xt, c=self.c_out)
 
