@@ -12,9 +12,6 @@ from dotenv import load_dotenv
 from torch import nn
 import torch
 
-# DONE import and define model
-# TODO save weights
-
 
 def train_epoch():
     epoch_loss = 0
@@ -67,7 +64,7 @@ def val_epoch():
             acc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
-        epoch_loss += epoch_loss.item()
+        epoch_loss += loss.item()
         epoch_acc += acc.item()
 
         return epoch_loss/(step+1), epoch_acc/(step+1)
@@ -115,8 +112,10 @@ def training_loop():
             })
 
             if (epoch+1) % 10 == 0:
+                save_path = os.getenv(
+                    f"{inp_name}_weights")+f"model_{epoch+1}.pt"
                 # Save weights here
-                pass
+                torch.save(model.state_dict(), save_path)
 
             if (epoch+1) % 50 == 0:
                 test_acc = test()
@@ -168,17 +167,8 @@ if __name__ == '__main__':
     val_loader = DataLoader(val_set, **params)
     test_loader = DataLoader(test_set, **params)
 
-    model = Classifier(
-        eps=EPS,
-        num_layers_mlp=NUM_LAYERS_MLP,
-        num_classes=dataset.num_classes,
-        c_in=C_IN,
-        c_out=C_OUT,
-        in_features=dataset.num_node_features,
-        dropout=DROPOUT,
-        use_att=USE_ATT,
-        use_bias=USE_BIAS
-    )
+    model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=dataset.num_node_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
+                       )
     optimizer = RiemannianAdam(
         params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
@@ -191,3 +181,5 @@ if __name__ == '__main__':
     wandb.init(
         project="Lorentzian Graph Isomorphism Network"
     )
+
+    training_loop()
