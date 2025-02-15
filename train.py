@@ -68,7 +68,7 @@ def val_epoch():
                 probs, data.y.int(), dataset.num_classes)
 
         epoch_loss += epoch_loss.item()
-        epoch_acc += epoch_acc.item()
+        epoch_acc += acc.item()
 
         return epoch_loss/(step+1), epoch_acc/(step+1)
 
