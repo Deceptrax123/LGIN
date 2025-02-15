@@ -17,7 +17,7 @@ def train_epoch():
     epoch_loss = 0
     epoch_acc = 0
     for step, data in enumerate(train_loader):
-        x, adj = data.x, to_dense_adj(data.edge_index, batch=data.batch)
+        x, adj = data.x, data.edge_index
         input = (x, adj)
 
         logits, probs = model(input)

@@ -10,7 +10,7 @@ class Classifier(Module):
     def __init__(self, eps, num_layers_mlp, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias):
         super(Classifier, self).__init__()
 
-        self.manifold = getattr(manifolds, 'Lorentzian')
+        self.manifold = getattr(manifolds, 'Lorentzian')()
         self.c_out = c_out
         if num_classes == 2:
             act = Sigmoid()
@@ -30,17 +30,17 @@ class Classifier(Module):
             self.manifold, in_features=128*3, out_features=num_classes, c=self.c_out, dropout=dropout, use_bias=use_bias)
         self.prob = LorentzAct(
             self.manifold, c_in=self.c_out, c_out=self.c_out, act=act)
-        self.agg = LorentzAgg(self.manifold, c=self.co_out,
+        self.agg = LorentzAgg(self.manifold, c=self.c_out,
                               use_att=use_att, in_features=num_classes, dropout=dropout)
 
     def forward(self, input):
         h = self.gin.forward(input)
 
-        h_tangential = self.manifold.log_map_zero(h, self.c_out)
+        h_tangential = self.manifold.log_map_zero(h, c=self.c_out)
         h_tangential_mean = torch.mean(h_tangential.T, dim=1).T
 
         h_norm_tang = self.manifold.normalize_tangent_zero(
-            h_tangential_mean, self.c_out)
+            p_tan=h_tangential_mean, c=self.c_out)
         h_classify = self.classifier(h_norm_tang)
 
         return h_classify, self.prob(h_classify)
@@ -51,10 +51,10 @@ class GinMLP(Module):
         super(GinMLP, self).__init__()
         assert num_layers > 0
         self.c = c
-        self.manifold = getattr(manifolds, 'Lorentzian')
+        self.manifold = getattr(manifolds, 'Lorentzian')()
 
         self.curvatures = [Parameter(torch.tensor([1.]))
-                           for _ in range(num_layers-1)]
+                           for _ in range(num_layers)]
         self.curvatures.append(self.c)
         layers = []
         for i in range(num_layers):
@@ -73,7 +73,7 @@ class GinMLP(Module):
                 )
 
             layers.append(block)
-        self.layers = Sequential(*block)
+        self.layers = Sequential(*layers)
 
     def forward(self, x):
         x = self.layers.forward(x)

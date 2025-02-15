@@ -41,7 +41,7 @@ class LorentzSparseSqDisAtt(nn.Module):
     def forward(self, x, adj):
         d = x.size(1) - 1
         x = self.weight_linear(x)
-        index = adj._indices()
+        index = adj.indices()
         _x = x[index[0, :]]
         _y = x[index[1, :]]
         _x_head = _x.narrow(1, 0, 1)

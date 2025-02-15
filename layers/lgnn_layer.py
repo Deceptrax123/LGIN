@@ -1,4 +1,5 @@
 from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
+from torch_geometric.utils import to_torch_coo_tensor
 from torch.nn import Module
 from torch import Tensor
 
@@ -16,17 +17,24 @@ class LorentzGIN(Module):
 
     def forward(self, input):
         x, adj = input
+        adj = to_torch_coo_tensor(adj)
 
         # Map to hyperbolid space
         x = self.manifold.exp_map_zero(x, self.c_in)
         if isinstance(x, Tensor):
             x = (x, x)
-        out = self.agg.forward(x=x, adj=adj)  # Calculate the Frechet Mean
+        out = self.agg.forward(x=x[0], adj=adj)  # Calculate the Frechet Mean
 
         x_r = x[1]
         if x_r is not None:
-            out = self.manifold.exp_map_zero(self.manifold.log_map_zero(
-                out, self.c_in)+(1+self.eps)*self.manifold.log_map_zero(x_r, self.c_in))
+            log_out = self.manifold.log_map_zero(out, c=self.c_in)
+            log_x_r = self.manifold.log_map_zero(x_r, c=self.c_in)
+
+            pt_xr = self.manifold.ptransp(x=x_r, y=out, v=log_x_r, c=self.c_in)
+            out = self.manifold.exp_map_zero(
+                dp=log_out+(1+self.eps)*pt_xr, c=self.c_in)
+
+        print(out.size())
 
         return self.nn(out)
 
