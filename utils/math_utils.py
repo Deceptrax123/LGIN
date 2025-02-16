@@ -13,8 +13,8 @@ def tanh(x, clamp=15):
     return x.clamp(-clamp, clamp).tanh()
 
 
-def arcosh(x):
-    return Arcosh.apply(x)
+def arcosh(x,):
+    return x.clamp(min=1.0 + 1e-10).acosh()
 
 
 def arsinh(x):
@@ -52,15 +52,15 @@ class Arsinh(torch.autograd.Function):
         return grad_output / (1 + input ** 2) ** 0.5
 
 
-class Arcosh(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x):
-        x = x.clamp(min=1.0 + 1e-10)
-        ctx.save_for_backward(x)
-        z = x.double()
-        return (z + torch.sqrt_(z.pow(2) - 1)).clamp_min_(1e-15).log_().to(x.dtype)
+# class Arcosh(torch.autograd.Function):
+#     @staticmethod
+#     def forward(ctx, x):
+#         x = x.clamp(min=1.0 + 1e-10)
+#         ctx.save_for_backward(x)
+#         z = x.double()
+#         return (z + torch.sqrt_(z.pow(2) - 1)).clamp_min_(1e-15).log_().to(x.dtype)
 
-    @staticmethod
-    def backward(ctx, grad_output):
-        input, = ctx.saved_tensors
-        return grad_output / (input ** 2 - 1) ** 0.5
+#     @staticmethod
+#     def backward(ctx, grad_output):
+#         input, = ctx.saved_tensors
+#         return grad_output / (input ** 2 - 1) ** 0.5

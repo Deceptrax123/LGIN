@@ -21,8 +21,7 @@ def train_epoch():
         input = (x, adj)
 
         logits, probs = model(input, batch=data.batch)
-
-        loss = loss_function(logits, data.y)
+        loss = loss_function(logits, data.y.float())
 
         loss.backward()
 
@@ -56,7 +55,7 @@ def val_epoch():
         input = (x, adj)
 
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.int())
+        loss = loss_function(logits, data.y.float())
 
         if dataset.num_classes == 2:
             acc = classification_binary_metrics(probs, data.y.int())
@@ -74,12 +73,12 @@ def val_epoch():
 def test():
     test_acc = 0
     for step, data in enumerate(test_loader):
-        x, adj = data.x, to_dense_adj(data.edge_index, batch=data.batch)
+        x, adj = data.x, data.edge_index
         input = (x, adj)
 
         logits, probs = model(input, batch=data.batch)
         if dataset.num_classes == 2:
-            acc = classification_binary_metrics(probs, data.y.int())
+            acc = classification_binary_metrics(probs, data.y.float())
         else:
             acc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
@@ -124,7 +123,7 @@ def training_loop():
 
 if __name__ == '__main__':
     load_dotenv('.env')
-    torch.autograd.set_detect_anomaly(True)
+    # torch.autograd.set_detect_anomaly(True)
 
     inp_name = input('Enter the dataset to be downloaded: ')
     imdb_b = os.getenv('imdb_b')
@@ -152,7 +151,7 @@ if __name__ == '__main__':
     test_ratio = 0.15
 
     params = {
-        'batch_size': 8,
+        'batch_size': 32,
         'shuffle': True,
         'num_workers': 0
     }
