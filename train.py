@@ -2,6 +2,7 @@ from torch_geometric.datasets import TUDataset
 from torch_geometric.loader import DataLoader
 from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS
 from torch_geometric.utils import to_dense_adj
+import torch_geometric.transforms as T
 from metrics import classification_binary_metrics, classification_multiclass_metrics
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
@@ -119,6 +120,9 @@ def training_loop():
             if (epoch+1) % 50 == 0:
                 test_acc = test()
                 print(f"Test Accuracy after {epoch+1} epochs is {test_acc}")
+                wandb.log({
+                    "Test Accuracy": test_acc
+                })
 
 
 if __name__ == '__main__':
@@ -131,33 +135,36 @@ if __name__ == '__main__':
     collab = os.getenv('collab')
     mutag = os.getenv('mutag')
     proteins = os.getenv('proteins')
+    proteins_full = os.getenv('proteins_full')
 
+    transform = T.OneHotDegree(max_degree=2)
     if inp_name == 'imdb_b':
         dataset = TUDataset(
-            root=imdb_b, name='IMDB-BINARY', use_node_attr=True)
+            root=imdb_b, name='IMDB-BINARY', transform=transform)
     elif inp_name == 'reddit_b':
         dataset = TUDataset(
-            root=reddit_b, name='REDDIT-BINARY', use_node_attr=True)
+            root=reddit_b, name='REDDIT-BINARY', transform=transform)
     elif inp_name == 'collab':
-        dataset = TUDataset(root=collab, name='COLLAB', use_node_attr=True)
+        dataset = TUDataset(root=collab, name='COLLAB', transform=transform)
     elif inp_name == 'mutag':
         dataset = TUDataset(root=mutag, name='MUTAG', use_node_attr=True)
     elif inp_name == 'proteins':
-        dataset = TUDataset(root=proteins, name='PROTEINS', use_node_attr=True)
+        dataset = TUDataset(root=proteins, name='PROTEINS')
+    elif inp_name == 'proteins_full':
+        dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
 
     dataset.shuffle()
-    train_ratio = 0.75
-    validation_ratio = 0.10
+    train_ratio = 0.70
+    validation_ratio = 0.15
     test_ratio = 0.15
 
     params = {
-        'batch_size': 32,
+        'batch_size': 256,
         'shuffle': True,
         'num_workers': 0
     }
 
     # model instantiation here->
-
     train_set, test_set = train_test_split(dataset, test_size=1 - train_ratio)
     val_set, test_set = train_test_split(
         test_set, test_size=test_ratio/(test_ratio + validation_ratio))

@@ -14,6 +14,7 @@ def main():
     collab = os.getenv('collab')
     mutag = os.getenv('mutag')
     proteins = os.getenv('proteins')
+    proteins_full = os.getenv('proteins_full')
 
     # zero feature
     transform = T.OneHotDegree(max_degree=4)
@@ -31,6 +32,8 @@ def main():
         dataset = TUDataset(root=mutag, name='MUTAG', use_node_attr=True)
     elif inp_name == 'proteins':
         dataset = TUDataset(root=proteins, name='PROTEINS', use_node_attr=True)
+    elif inp_name == 'proteins_full':
+        dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
 
 
 main()

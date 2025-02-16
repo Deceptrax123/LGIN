@@ -70,7 +70,7 @@ class GinMLP(Module):
             if i == 0:
                 block = Sequential(
                     LorentzLinear(manifold=self.manifold, in_features=in_features-1,
-                                  out_features=128, c=c_in, dropout=dropout, use_bias=use_bias),
+                                  out_features=feat, c=c_in, dropout=dropout, use_bias=use_bias),
                     LorentzAct(manifold=self.manifold, c_in=c_in, c_out=c_out, act=ReLU()))
             else:
                 block = Sequential(

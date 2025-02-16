@@ -37,7 +37,7 @@ class Lorentzian(Manifold):
     def induced_distance(self, x, y, c):
         xy_inner = self.l_inner(x, y)
         sqrt_c = c ** 0.5
-        return sqrt_c * arcosh(-xy_inner / c + self.eps[x.dtype])
+        return sqrt_c * arcosh(-xy_inner / c + 1e-6)
 
     def lorentzian_distance(self, x, y, c):
         # the squared Lorentzian distance
