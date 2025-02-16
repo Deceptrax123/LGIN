@@ -111,13 +111,30 @@ class LorentzAgg(Module):
             self.att = LorentzSparseSqDisAtt(
                 manifold, c, in_features-1, dropout)
 
+    def normalize_adj(self, adj):  # ensures numerical stability
+        deg = torch.sparse.sum(adj, dim=1).to_dense()
+
+        deg_inv_sqrt = torch.pow(deg, -0.5)
+        deg_inv_sqrt[deg_inv_sqrt == float('inf')] = 0.0
+
+        D_inv_sqrt = torch.diag(deg_inv_sqrt)
+
+        norm_adj = torch.sparse.mm(
+            D_inv_sqrt, torch.sparse.mm(adj, D_inv_sqrt))
+
+        return norm_adj
+
     def lorentz_centroid(self, weight, x, c):
         if self.use_att:
             sum_x = self.this_spmm(weight[0], weight[1], weight[2], x)
         else:
-            sum_x = torch.spmm(weight, x)
+            weight_norm = self.normalize_adj(weight)
+            sum_x = torch.spmm(weight_norm, x)
+
         x_inner = self.manifold.l_inner(sum_x, sum_x)
-        coefficient = (c**0.5)/torch.sqrt(torch.abs(x_inner))
+        x_inner = torch.clamp(x_inner, min=1e-6)
+
+        coefficient = (c**0.5)/(torch.sqrt(torch.abs(x_inner))+1e-6)
 
         return torch.mul(coefficient, sum_x.transpose(-2, -1)).transpose(-2, -1)
 

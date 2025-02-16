@@ -18,11 +18,15 @@ def train_epoch():
     epoch_loss = 0
     epoch_acc = 0
     for step, data in enumerate(train_loader):
+        if dataset.num_node_features == 0:
+            data.x = torch.ones(
+                (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x, data.edge_index
         input = (x, adj)
 
         logits, probs = model(input, batch=data.batch)
         loss = loss_function(logits, data.y.float())
+        # print(logits[:, 1:30])
 
         loss.backward()
 
@@ -52,6 +56,9 @@ def val_epoch():
     epoch_loss = 0
     epoch_acc = 0
     for step, data in enumerate(val_loader):
+        if dataset.num_node_features == 0:
+            data.x = torch.ones(
+                (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x, data.edge_index
         input = (x, adj)
 
@@ -74,6 +81,9 @@ def val_epoch():
 def test():
     test_acc = 0
     for step, data in enumerate(test_loader):
+        if dataset.num_node_features == 0:
+            data.x = torch.ones(
+                (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x, data.edge_index
         input = (x, adj)
 
@@ -136,22 +146,24 @@ if __name__ == '__main__':
     mutag = os.getenv('mutag')
     proteins = os.getenv('proteins')
     proteins_full = os.getenv('proteins_full')
+    enzymes = os.getenv('enzymes')
 
-    transform = T.OneHotDegree(max_degree=2)
     if inp_name == 'imdb_b':
         dataset = TUDataset(
-            root=imdb_b, name='IMDB-BINARY', transform=transform)
+            root=imdb_b, name='IMDB-BINARY')
     elif inp_name == 'reddit_b':
         dataset = TUDataset(
-            root=reddit_b, name='REDDIT-BINARY', transform=transform)
+            root=reddit_b, name='REDDIT-BINARY')
     elif inp_name == 'collab':
-        dataset = TUDataset(root=collab, name='COLLAB', transform=transform)
+        dataset = TUDataset(root=collab, name='COLLAB')
     elif inp_name == 'mutag':
         dataset = TUDataset(root=mutag, name='MUTAG', use_node_attr=True)
     elif inp_name == 'proteins':
         dataset = TUDataset(root=proteins, name='PROTEINS')
     elif inp_name == 'proteins_full':
         dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
+    elif inp_name == 'enzymes':
+        dataset = TUDataset(root=enzymes, name='ENZYMES')
 
     dataset.shuffle()
     train_ratio = 0.70
@@ -159,7 +171,7 @@ if __name__ == '__main__':
     test_ratio = 0.15
 
     params = {
-        'batch_size': 256,
+        'batch_size': 64,
         'shuffle': True,
         'num_workers': 0
     }
@@ -172,8 +184,13 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_set, **params)
     val_loader = DataLoader(val_set, **params)
     test_loader = DataLoader(test_set, **params)
+    if dataset.num_node_features == 0:
+        num_in_features = 2
+    else:
+        num_in_features = dataset.num_node_features
+    print(dataset.num_node_features)
 
-    model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=dataset.num_node_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
+    model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
                        )
     optimizer = RiemannianAdam(
         params=model.parameters(), lr=LR, weight_decay=EPSILON)

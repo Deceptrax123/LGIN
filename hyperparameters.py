@@ -9,6 +9,6 @@ EPS = 1e-8
 NUM_LAYERS_MLP = 3
 C_IN = 1
 C_OUT = 2
-USE_ATT = True
+USE_ATT = False
 USE_BIAS = True
 DROPOUT = 0.2

@@ -11,8 +11,9 @@ class LorentzGIN(Module):
 
         self.c_in = c_in
         self.manifold = manifold
+        self.use_att = use_att
         self.agg = LorentzAgg(manifold, self.c_in,
-                              use_att, in_features, use_bias)
+                              self.use_att, in_features, use_bias)
         self.nn = nn
         self.eps = Parameter(torch.tensor(eps))
 
@@ -27,7 +28,6 @@ class LorentzGIN(Module):
         out = self.agg.forward(x=x[0], adj=adj)  # Calculate the Frechet Mean
 
         x_r = x[1]
-        print(self.eps)
         if x_r is not None:
             log_out = self.manifold.log_map_zero(out, c=self.c_in)
             log_x_r = self.manifold.log_map_zero(x_r, c=self.c_in)
