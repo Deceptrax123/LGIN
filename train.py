@@ -1,4 +1,4 @@
-from torch_geometric.datasets import TUDataset
+from torch_geometric.datasets import TUDataset, MoleculeNet
 from torch_geometric.loader import DataLoader
 from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS
 from torch_geometric.utils import to_dense_adj
@@ -16,6 +16,17 @@ from torch import nn
 import torch
 
 
+def compute_class_weights(labels):
+    num_pos = (labels == 1).sum().item()
+    num_neg = (labels == 0).sum().item()
+
+    total = num_pos + num_neg
+    weight_pos = total / (2 * num_pos)  # Inverse frequency
+    weight_neg = total / (2 * num_neg)
+
+    return torch.tensor([weight_neg, weight_pos], dtype=torch.float32)
+
+
 def plot_grad_flow(named_parameters):
     ave_grads = []
     layers = []
@@ -30,15 +41,21 @@ def plot_grad_flow(named_parameters):
 def train_epoch():
     epoch_loss = 0
     epoch_acc = 0
+    epoch_auc = 0
     for step, data in enumerate(train_loader):
         if dataset.num_node_features == 0:
             data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        x, adj = data.x, data.edge_index
+        x, adj = data.x.float(), data.edge_index
         input = (x, adj)
 
+        # weights = compute_class_weights(data.y)
+
         optimizer.zero_grad()
+        data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
+
+        # loss_function = nn.BCEWithLogitsLoss(pos_weight=weights[1])
         loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
 
@@ -54,94 +71,108 @@ def train_epoch():
         optimizer.step()
 
         if dataset.num_classes == 2:
-            acc = classification_binary_metrics(probs, data.y.int())
+            acc, auroc = classification_binary_metrics(probs, data.y.int())
         else:
-            acc = classification_multiclass_metrics(
+            acc, auroc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
         epoch_loss += loss.item()
         epoch_acc += acc.item()
+        epoch_auc += auroc.item()
 
-    return epoch_loss/(step+1), epoch_acc/(step+1)
+    return epoch_loss/(step+1), epoch_acc/(step+1), epoch_auc/(step+1)
 
 
 @torch.no_grad()
 def val_epoch():
     epoch_loss = 0
     epoch_acc = 0
+    epoch_auc = 0
     for step, data in enumerate(val_loader):
         if dataset.num_node_features == 0:
             data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        x, adj = data.x, data.edge_index
+        x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-
+        # weights = compute_class_weights(data.y)
+        data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
+
+        # loss_function = nn.BCEWithLogitsLoss(pos_weight=weights[1])
         loss = loss_function(logits, data.y.float())
 
         if dataset.num_classes == 2:
-            acc = classification_binary_metrics(probs, data.y.int())
+            acc, auc = classification_binary_metrics(probs, data.y.int())
         else:
-            acc = classification_multiclass_metrics(
+            acc, auc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
         epoch_loss += loss.item()
         epoch_acc += acc.item()
+        epoch_auc += auc.item()
 
-        return epoch_loss/(step+1), epoch_acc/(step+1)
+    return epoch_loss/(step+1), epoch_acc/(step+1), epoch_auc/(step+1)
 
 
 @torch.no_grad()
 def test():
     test_acc = 0
+    test_auc = 0
     for step, data in enumerate(test_loader):
         if dataset.num_node_features == 0:
             data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        x, adj = data.x, data.edge_index
+        x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-
+        data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
         if dataset.num_classes == 2:
-            acc = classification_binary_metrics(probs, data.y.float())
+            acc, auc = classification_binary_metrics(probs, data.y.int())
         else:
-            acc = classification_multiclass_metrics(
+            acc, auc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
         test_acc += acc.item()
-    return test_acc/(step+1)
+        test_auc += auc.item()
+    return test_acc/(step+1), test_auc/(step+1)
 
 
 def training_loop():
 
     for epoch in range(EPOCHS):
         model.train()
-        train_loss, train_acc = train_epoch()
+        train_loss, train_acc, train_auc = train_epoch()
         model.eval()
 
         with torch.no_grad():
-            val_loss, val_acc = val_epoch()
+            val_loss, val_acc, val_auc = val_epoch()
 
             print("Epoch: ", epoch+1)
             print("Train Loss: ", train_loss)
             print("Train Accuracy: ", train_acc)
+            print("Train AUC: ", train_auc)
             print("Validation Loss: ", val_loss)
             print("Validation Accuracy: ", val_acc)
+            print("Validation AUC: ", val_auc)
 
             grads = plot_grad_flow(model.named_parameters())
 
             wandb.log({
                 "Train Loss": train_loss,
                 "Train Accuracy": train_acc,
+                "Train AUC": train_auc,
                 "Validation Loss": val_loss,
                 "Validation Accuracy": val_acc,
+                "Validation AUC": val_auc,
                 "Gradients": wandb.Histogram(grads)
             })
 
-            test_acc = test()
+            test_acc, test_auc = test()
             print(f"Test Accuracy: {test_acc}")
+            print(f"Test AUC: {test_auc}")
             wandb.log({
-                "Test Accuracy": test_acc
+                "Test Accuracy": test_acc,
+                "Test AUC": test_auc
             })
 
             if (epoch+1) % 10 == 0:
@@ -163,6 +194,9 @@ if __name__ == '__main__':
     proteins = os.getenv('proteins')
     proteins_full = os.getenv('proteins_full')
     enzymes = os.getenv('enzymes')
+    clintox = os.getenv('clintox')
+    bbbp = os.getenv('bbbp')
+    hiv = os.getenv('hiv')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -180,6 +214,14 @@ if __name__ == '__main__':
         dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
     elif inp_name == 'enzymes':
         dataset = TUDataset(root=enzymes, name='ENZYMES')
+    elif inp_name == 'clintox':
+        dataset = MoleculeNet(root=clintox, name='ClinTox')
+    elif inp_name == 'bbbp':
+        dataset = MoleculeNet(root=bbbp, name='BBBP',
+                              transform=(T.RemoveIsolatedNodes()))
+    elif inp_name == 'hiv':
+        dataset = MoleculeNet(root=hiv, name='HIV', transform=[
+                              T.RemoveIsolatedNodes()])
 
     dataset.shuffle()
     train_ratio = 0.70
@@ -187,7 +229,7 @@ if __name__ == '__main__':
     test_ratio = 0.20
 
     params = {
-        'batch_size': 32,
+        'batch_size': 256,
         'shuffle': True,
         'num_workers': 0
     }
@@ -204,7 +246,6 @@ if __name__ == '__main__':
         num_in_features = 2
     else:
         num_in_features = dataset.num_node_features
-    print(dataset.num_node_features)
 
     # model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
     #                    )

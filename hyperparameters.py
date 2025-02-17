@@ -7,8 +7,8 @@ CLIP_VALUE = 1.0
 # Model initializations
 EPS = 0.1
 NUM_LAYERS_MLP = 2
-C_IN = 1.0
-C_OUT = 1.0
+C_IN = 4.0
+C_OUT = 4.0
 USE_ATT = True
 USE_BIAS = True
 DROPOUT = 0.0002

@@ -1,4 +1,4 @@
-from torch_geometric.datasets import TUDataset
+from torch_geometric.datasets import TUDataset, MoleculeNet
 import torch_geometric.transforms as T
 import os
 from dotenv import load_dotenv
@@ -16,6 +16,9 @@ def main():
     proteins = os.getenv('proteins')
     proteins_full = os.getenv('proteins_full')
     enzymes = os.getenv('enzymes')
+    clintox = os.getenv('clintox')
+    bbbp = os.getenv('bbbp')
+    hiv = os.getenv('hiv')
 
     # zero feature
     transform = T.OneHotDegree(max_degree=4)
@@ -37,6 +40,12 @@ def main():
         dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
     elif inp_name == 'enzymes':
         dataset = TUDataset(root=enzymes, name='ENZYMES')
+    elif inp_name == 'clintox':
+        dataset = MoleculeNet(root=clintox, name='ClinTox')
+    elif inp_name == 'bbbp':
+        dataset = MoleculeNet(root=bbbp, name='BBBP')
+    elif inp_name == 'hiv':
+        dataset = MoleculeNet(root=hiv, name='HIV')
 
 
 main()

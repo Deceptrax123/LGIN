@@ -8,21 +8,21 @@ def classification_binary_metrics(predictions, labels):
     # f1 = BinaryF1Score()
     # precision = BinaryPrecision()
     # recall = BinaryRecall()
-    # auc = BinaryAUROC()
+    auc = BinaryAUROC()
 
     acc = accuracy(predictions, labels)
     # f1_score = f1(predictions, labels)
     # prec = precision(predictions, labels)
     # rec = recall(predictions, labels)
-    # auc_score = auc(predictions, labels)
+    auc_score = auc(predictions, labels)
 
-    return acc
+    return acc, auc_score
 
 
 def classification_multiclass_metrics(predictions, labels, num_classes):
     accuracy = MulticlassAccuracy(num_classes=num_classes)(predictions, labels)
-    # auroc = MulticlassAUROC(num_classes=num_classes)(predictions, labels)
+    auroc = MulticlassAUROC(num_classes=num_classes)(predictions, labels)
     # f1 = MulticlassF1Score(num_classes=num_classes,
     #                        average='micro')(predictions, labels)
 
-    return accuracy
+    return accuracy, auroc

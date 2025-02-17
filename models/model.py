@@ -4,7 +4,7 @@ from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
 from torch_geometric.nn import global_mean_pool, global_add_pool
 import numpy as np
 import torch
-from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax
+from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax, Linear
 
 
 class Classifier(Module):
@@ -62,9 +62,12 @@ class MultilayerGIN(Module):
         self.manifold = getattr(manifolds, 'Lorentzian')()
         self.c_out = c_out
         self.c_in = c_in
-        if num_classes == 2:
+        if num_classes == 1:
             act = Sigmoid()
-            self.final_out = 2
+            self.final_out = num_classes+1
+        elif num_classes == 2:
+            act = Sigmoid()
+            self.final_out = num_classes-1
         else:
             act = Softmax(dim=1)
             self.final_out = num_classes+1
@@ -105,10 +108,13 @@ class MultilayerGIN(Module):
         self.act_3 = LorentzAct(manifold=self.manifold,
                                 c_in=self.c_out, c_out=self.c_out, act=ReLU())
 
-        self.classifier = LorentzLinear(
-            self.manifold, in_features=512-1, out_features=self.final_out, c=self.c_out, dropout=dropout, use_bias=use_bias)
-        self.prob = LorentzAct(
-            self.manifold, c_in=self.c_out, c_out=self.c_out, act=act)
+        # self.classifier = LorentzLinear(
+        #     self.manifold, in_features=512-1, out_features=self.final_out, c=self.c_out, dropout=dropout, use_bias=use_bias)
+        # self.prob = LorentzAct(
+        #     self.manifold, c_in=self.c_out, c_out=self.c_out, act=act)
+        self.classifier = Linear(
+            in_features=512, out_features=self.final_out)
+        self.prob = act
 
     def forward(self, input, batch):
         x, edge_index = input
@@ -119,18 +125,14 @@ class MultilayerGIN(Module):
         h = self.act_2.forward(self.gin_2.forward(input=(h, edge_index)))
         h = self.act_3.forward(self.gin_3.forward(input=(h, edge_index)))
 
-        h_tangential = self.manifold.log_map_zero(h, c=self.c_out)
+        h_tangential = self.manifold.proj_tan0(
+            self.manifold.log_map_zero(h, c=self.c_out), c=self.c_out)
         h_tangential_mean = global_mean_pool(h_tangential, batch)
 
-        h_exp = self.manifold.exp_map_zero(h_tangential_mean, c=self.c_out)
-        h_classify = self.classifier(h_exp)
+        h_classify = self.classifier(h_tangential_mean)
         h_classify_prob = self.prob(h_classify)
 
-        # Ignoring origin
-        if self.final_out > 2:
-            return h_classify[:, 1:], h_classify_prob[:, 1:]
-
-        return h_classify[:, 1:].view(h_classify.size(0),), h_classify_prob[:, 1:].view(h_classify.size(0),)
+        return h_classify, h_classify_prob
 
 
 class GinMLP(Module):
@@ -140,7 +142,7 @@ class GinMLP(Module):
         self.c = c
         self.manifold = getattr(manifolds, 'Lorentzian')()
 
-        self.curvatures = [torch.tensor([1.])
+        self.curvatures = [torch.tensor([4.])
                            for _ in range(num_layers)]
         self.curvatures.append(self.c)
         layers = []
