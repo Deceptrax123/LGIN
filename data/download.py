@@ -19,6 +19,7 @@ def main():
     clintox = os.getenv('clintox')
     bbbp = os.getenv('bbbp')
     hiv = os.getenv('hiv')
+    sider = os.getenv('sider')
 
     # zero feature
     transform = T.OneHotDegree(max_degree=4)
@@ -46,6 +47,8 @@ def main():
         dataset = MoleculeNet(root=bbbp, name='BBBP')
     elif inp_name == 'hiv':
         dataset = MoleculeNet(root=hiv, name='HIV')
+    elif inp_name == 'sider':
+        dataaset = MoleculeNet(root=sider, name='SIDER')
 
 
 main()

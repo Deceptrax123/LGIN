@@ -16,17 +16,6 @@ from torch import nn
 import torch
 
 
-def compute_class_weights(labels):
-    num_pos = (labels == 1).sum().item()
-    num_neg = (labels == 0).sum().item()
-
-    total = num_pos + num_neg
-    weight_pos = total / (2 * num_pos)  # Inverse frequency
-    weight_neg = total / (2 * num_neg)
-
-    return torch.tensor([weight_neg, weight_pos], dtype=torch.float32)
-
-
 def plot_grad_flow(named_parameters):
     ave_grads = []
     layers = []
@@ -52,10 +41,12 @@ def train_epoch():
         # weights = compute_class_weights(data.y)
 
         optimizer.zero_grad()
-        data.y = data.y.view(data.y.size(0), 1)
+        if data.y.size() == (data.y.size(0),):
+            data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
+        print(logits.size())
+        print(data.y.size())
 
-        # loss_function = nn.BCEWithLogitsLoss(pos_weight=weights[1])
         loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
 
@@ -73,6 +64,7 @@ def train_epoch():
         if dataset.num_classes == 2:
             acc, auroc = classification_binary_metrics(probs, data.y.int())
         else:
+            print(probs.size())
             acc, auroc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
@@ -94,11 +86,10 @@ def val_epoch():
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-        # weights = compute_class_weights(data.y)
-        data.y = data.y.view(data.y.size(0), 1)
+        if data.y.size() == (data.y.size(0),):
+            data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
 
-        # loss_function = nn.BCEWithLogitsLoss(pos_weight=weights[1])
         loss = loss_function(logits, data.y.float())
 
         if dataset.num_classes == 2:
@@ -197,6 +188,7 @@ if __name__ == '__main__':
     clintox = os.getenv('clintox')
     bbbp = os.getenv('bbbp')
     hiv = os.getenv('hiv')
+    sider = os.getenv('sider')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -220,16 +212,19 @@ if __name__ == '__main__':
         dataset = MoleculeNet(root=bbbp, name='BBBP',
                               transform=(T.RemoveIsolatedNodes()))
     elif inp_name == 'hiv':
-        dataset = MoleculeNet(root=hiv, name='HIV', transform=[
-                              T.RemoveIsolatedNodes()])
+        dataset = MoleculeNet(root=hiv, name='HIV', transform=(
+                              T.RemoveIsolatedNodes()))
+    elif inp_name == 'sider':
+        dataset = MoleculeNet(root=sider, name='SIDER', transform=(
+            T.RemoveIsolatedNodes()))
 
     dataset.shuffle()
-    train_ratio = 0.70
+    train_ratio = 0.80
     validation_ratio = 0.10
-    test_ratio = 0.20
+    test_ratio = 0.10
 
     params = {
-        'batch_size': 256,
+        'batch_size': 64,
         'shuffle': True,
         'num_workers': 0
     }

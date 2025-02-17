@@ -70,7 +70,7 @@ class MultilayerGIN(Module):
             self.final_out = num_classes-1
         else:
             act = Softmax(dim=1)
-            self.final_out = num_classes+1
+            self.final_out = num_classes
         self.gin_1 = LorentzGIN(
             manifold=self.manifold,
             eps=eps,
