@@ -5,10 +5,10 @@ EPSILON = 1e-8
 CLIP_VALUE = 1.0
 
 # Model initializations
-EPS = 1e-8
-NUM_LAYERS_MLP = 3
-C_IN = 1
-C_OUT = 2
-USE_ATT = False
+EPS = 0.1
+NUM_LAYERS_MLP = 2
+C_IN = 1.0
+C_OUT = 1.0
+USE_ATT = True
 USE_BIAS = True
-DROPOUT = 0.2
+DROPOUT = 0.0002

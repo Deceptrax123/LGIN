@@ -38,6 +38,10 @@ class LorentzGIN(Module):
 
         return self.nn(out)
 
+    def reset_parameters(self):
+        self.nn.reset_parameters()
+        self.agg.reset_parameters()
+
 
 class LorentzGNN(Module):
     def __init__(self, manifold, in_features, out_features, c_in, c_out, drop_out, act, use_bias, use_att):

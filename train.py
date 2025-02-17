@@ -6,7 +6,7 @@ import torch_geometric.transforms as T
 from metrics import classification_binary_metrics, classification_multiclass_metrics
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
-from models.model import Classifier
+from models.model import Classifier, MultilayerGIN
 import wandb
 import os
 from dotenv import load_dotenv
@@ -24,8 +24,9 @@ def train_epoch():
         x, adj = data.x, data.edge_index
         input = (x, adj)
 
+        optimizer.zero_grad()
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y.long())
         # print(logits[:, 1:30])
 
         loss.backward()
@@ -63,7 +64,7 @@ def val_epoch():
         input = (x, adj)
 
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y.long())
 
         if dataset.num_classes == 2:
             acc = classification_binary_metrics(probs, data.y.int())
@@ -166,12 +167,12 @@ if __name__ == '__main__':
         dataset = TUDataset(root=enzymes, name='ENZYMES')
 
     dataset.shuffle()
-    train_ratio = 0.70
-    validation_ratio = 0.15
-    test_ratio = 0.15
+    train_ratio = 0.80
+    validation_ratio = 0.10
+    test_ratio = 0.10
 
     params = {
-        'batch_size': 64,
+        'batch_size': 128,
         'shuffle': True,
         'num_workers': 0
     }
@@ -190,8 +191,10 @@ if __name__ == '__main__':
         num_in_features = dataset.num_node_features
     print(dataset.num_node_features)
 
-    model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
-                       )
+    # model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
+    #                    )
+    model = MultilayerGIN(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN,
+                          c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS)
     optimizer = RiemannianAdam(
         params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
