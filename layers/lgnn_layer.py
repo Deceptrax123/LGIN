@@ -13,7 +13,7 @@ class LorentzGIN(Module):
         self.manifold = manifold
         self.use_att = use_att
         self.agg = LorentzAgg(manifold, self.c_in,
-                              self.use_att, in_features, use_bias)
+                              self.use_att, in_features+1, use_bias)
         self.nn = nn
         self.eps = Parameter(torch.tensor(eps))
 

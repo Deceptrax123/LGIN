@@ -8,10 +8,23 @@ from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
 from models.model import Classifier, MultilayerGIN
 import wandb
+import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
+import time
 from torch import nn
 import torch
+
+
+def plot_grad_flow(named_parameters):
+    ave_grads = []
+    layers = []
+    for n, p in named_parameters:
+        if (p.requires_grad) and ("bias" not in n):
+            layers.append(n)
+            ave_grads.append(p.grad.abs().mean())
+
+    return ave_grads
 
 
 def train_epoch():
@@ -26,7 +39,7 @@ def train_epoch():
 
         optimizer.zero_grad()
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.long())
+        loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
 
         loss.backward()
@@ -64,7 +77,7 @@ def val_epoch():
         input = (x, adj)
 
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.long())
+        loss = loss_function(logits, data.y.float())
 
         if dataset.num_classes == 2:
             acc = classification_binary_metrics(probs, data.y.int())
@@ -115,25 +128,27 @@ def training_loop():
             print("Validation Loss: ", val_loss)
             print("Validation Accuracy: ", val_acc)
 
+            grads = plot_grad_flow(model.named_parameters())
+
             wandb.log({
                 "Train Loss": train_loss,
                 "Train Accuracy": train_acc,
                 "Validation Loss": val_loss,
-                "Validation Accuracy": val_acc
+                "Validation Accuracy": val_acc,
+                "Gradients": wandb.Histogram(grads)
+            })
+
+            test_acc = test()
+            print(f"Test Accuracy: {test_acc}")
+            wandb.log({
+                "Test Accuracy": test_acc
             })
 
             if (epoch+1) % 10 == 0:
                 save_path = os.getenv(
-                    f"{inp_name}_weights")+f"model_{epoch+1}.pt"
+                    f"{inp_name}_weights")+f"/Run_1/model_{epoch+1}.pt"
                 # Save weights here
                 torch.save(model.state_dict(), save_path)
-
-            if (epoch+1) % 50 == 0:
-                test_acc = test()
-                print(f"Test Accuracy after {epoch+1} epochs is {test_acc}")
-                wandb.log({
-                    "Test Accuracy": test_acc
-                })
 
 
 if __name__ == '__main__':
@@ -167,12 +182,12 @@ if __name__ == '__main__':
         dataset = TUDataset(root=enzymes, name='ENZYMES')
 
     dataset.shuffle()
-    train_ratio = 0.80
+    train_ratio = 0.70
     validation_ratio = 0.10
-    test_ratio = 0.10
+    test_ratio = 0.20
 
     params = {
-        'batch_size': 128,
+        'batch_size': 32,
         'shuffle': True,
         'num_workers': 0
     }

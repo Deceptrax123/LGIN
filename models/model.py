@@ -61,7 +61,7 @@ class MultilayerGIN(Module):
         super(MultilayerGIN, self).__init__()
         self.manifold = getattr(manifolds, 'Lorentzian')()
         self.c_out = c_out
-        self.c_in = Parameter(torch.tensor(c_in))
+        self.c_in = c_in
         if num_classes == 2:
             act = Sigmoid()
             self.final_out = 2
@@ -81,20 +81,20 @@ class MultilayerGIN(Module):
         self.gin_2 = LorentzGIN(
             manifold=self.manifold,
             eps=eps,
-            in_features=128,
+            in_features=128-1,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=128, dropout=dropout, use_bias=use_bias, out_dim=256),
+                      in_features=128-1, dropout=dropout, use_bias=use_bias, out_dim=256),
             use_att=use_att,
             use_bias=use_bias
         )
         self.gin_3 = LorentzGIN(
             manifold=self.manifold,
             eps=eps,
-            in_features=256,
+            in_features=256-1,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=256, dropout=dropout, use_bias=use_bias, out_dim=512),
+                      in_features=256-1, dropout=dropout, use_bias=use_bias, out_dim=512),
             use_att=use_att,
             use_bias=use_bias
         )
@@ -113,6 +113,7 @@ class MultilayerGIN(Module):
     def forward(self, input, batch):
         x, edge_index = input
 
+        x = self.manifold.normalize_input(x, c=self.c_in)
         input = (x, edge_index)
         h = self.act_1.forward(self.gin_1.forward(input))
         h = self.act_2.forward(self.gin_2.forward(input=(h, edge_index)))
@@ -139,7 +140,7 @@ class GinMLP(Module):
         self.c = c
         self.manifold = getattr(manifolds, 'Lorentzian')()
 
-        self.curvatures = [Parameter(torch.tensor([1.]))
+        self.curvatures = [torch.tensor([1.])
                            for _ in range(num_layers)]
         self.curvatures.append(self.c)
         layers = []
@@ -148,7 +149,7 @@ class GinMLP(Module):
             c_in, c_out = self.curvatures[i], self.curvatures[i+1]
             if i == 0:
                 block = Sequential(
-                    LorentzLinear(manifold=self.manifold, in_features=in_features-1,
+                    LorentzLinear(manifold=self.manifold, in_features=in_features,
                                   out_features=feat, c=c_in, dropout=dropout, use_bias=use_bias),
                     LorentzAct(manifold=self.manifold, c_in=c_in,
                                c_out=c_out, act=ReLU())
