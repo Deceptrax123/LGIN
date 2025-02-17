@@ -44,8 +44,6 @@ def train_epoch():
         if data.y.size() == (data.y.size(0),):
             data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
-        print(logits.size())
-        print(data.y.size())
 
         loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
@@ -219,12 +217,12 @@ if __name__ == '__main__':
             T.RemoveIsolatedNodes()))
 
     dataset.shuffle()
-    train_ratio = 0.80
+    train_ratio = 0.70
     validation_ratio = 0.10
-    test_ratio = 0.10
+    test_ratio = 0.20
 
     params = {
-        'batch_size': 64,
+        'batch_size': 128,
         'shuffle': True,
         'num_workers': 0
     }
