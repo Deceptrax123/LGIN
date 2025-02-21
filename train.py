@@ -37,15 +37,15 @@ def train_epoch():
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-
         # weights = compute_class_weights(data.y)
 
         optimizer.zero_grad()
-        if data.y.size() == (data.y.size(0),):
-            data.y = data.y.view(data.y.size(0), 1)
+        if task == 'binary':
+            if data.y.size() == (data.y.size(0),):
+                data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y.long())
         # print(logits[:, 1:30])
 
         loss.backward()
@@ -62,7 +62,7 @@ def train_epoch():
         if dataset.num_classes == 2:
             acc, auroc = classification_binary_metrics(probs, data.y.int())
         else:
-            print(probs.size())
+
             acc, auroc = classification_multiclass_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
@@ -84,11 +84,12 @@ def val_epoch():
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-        if data.y.size() == (data.y.size(0),):
-            data.y = data.y.view(data.y.size(0), 1)
+        if task == 'binary':
+            if data.y.size() == (data.y.size(0),):
+                data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y.long())
 
         if dataset.num_classes == 2:
             acc, auc = classification_binary_metrics(probs, data.y.int())
@@ -113,7 +114,8 @@ def test():
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-        data.y = data.y.view(data.y.size(0), 1)
+        if task == 'binary':
+            data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
         if dataset.num_classes == 2:
             acc, auc = classification_binary_metrics(probs, data.y.int())
@@ -146,6 +148,10 @@ def training_loop():
 
             grads = plot_grad_flow(model.named_parameters())
 
+            test_acc, test_auc = test()
+            print(f"Test Accuracy: {test_acc}")
+            print(f"Test AUC: {test_auc}")
+
             wandb.log({
                 "Train Loss": train_loss,
                 "Train Accuracy": train_acc,
@@ -153,18 +159,12 @@ def training_loop():
                 "Validation Loss": val_loss,
                 "Validation Accuracy": val_acc,
                 "Validation AUC": val_auc,
-                "Gradients": wandb.Histogram(grads)
-            })
-
-            test_acc, test_auc = test()
-            print(f"Test Accuracy: {test_acc}")
-            print(f"Test AUC: {test_auc}")
-            wandb.log({
+                "Gradients": wandb.Histogram(grads),
                 "Test Accuracy": test_acc,
                 "Test AUC": test_auc
             })
 
-            if (epoch+1) % 10 == 0:
+            if (epoch+1) % 50 == 0:
                 save_path = os.getenv(
                     f"{inp_name}_weights")+f"/Run_1/model_{epoch+1}.pt"
                 # Save weights here
@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
-            root=imdb_b, name='IMDB-BINARY')
+            root=imdb_b, name='IMDB-BINARY', transform=(T.OneHotDegree(max_degree=10)))
     elif inp_name == 'reddit_b':
         dataset = TUDataset(
             root=reddit_b, name='REDDIT-BINARY')
@@ -200,27 +200,32 @@ if __name__ == '__main__':
         dataset = TUDataset(root=mutag, name='MUTAG', use_node_attr=True)
     elif inp_name == 'proteins':
         dataset = TUDataset(root=proteins, name='PROTEINS')
+        task = 'binary'
     elif inp_name == 'proteins_full':
         dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
     elif inp_name == 'enzymes':
-        dataset = TUDataset(root=enzymes, name='ENZYMES')
+        dataset = TUDataset(root=enzymes, name='ENZYMES',
+                            transform=(T.RemoveIsolatedNodes()))
+        task = 'multiclass'
     elif inp_name == 'clintox':
         dataset = MoleculeNet(root=clintox, name='ClinTox')
     elif inp_name == 'bbbp':
         dataset = MoleculeNet(root=bbbp, name='BBBP',
                               transform=(T.RemoveIsolatedNodes()))
+        task = 'binary'
     elif inp_name == 'hiv':
         dataset = MoleculeNet(root=hiv, name='HIV', transform=(
-                              T.RemoveIsolatedNodes()))
+            T.RemoveIsolatedNodes()))
+        task = 'binary'
     elif inp_name == 'sider':
         dataset = MoleculeNet(root=sider, name='SIDER', transform=(
             T.RemoveIsolatedNodes()))
+        task = 'multiclass'
 
     dataset.shuffle()
     train_ratio = 0.70
-    validation_ratio = 0.10
-    test_ratio = 0.20
-
+    validation_ratio = 0.15
+    test_ratio = 0.15
     params = {
         'batch_size': 128,
         'shuffle': True,
@@ -231,7 +236,6 @@ if __name__ == '__main__':
     train_set, test_set = train_test_split(dataset, test_size=1 - train_ratio)
     val_set, test_set = train_test_split(
         test_set, test_size=test_ratio/(test_ratio + validation_ratio))
-
     train_loader = DataLoader(train_set, **params)
     val_loader = DataLoader(val_set, **params)
     test_loader = DataLoader(test_set, **params)
