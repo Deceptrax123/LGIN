@@ -3,7 +3,7 @@ from torch_geometric.loader import DataLoader
 from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS
 from torch_geometric.utils import to_dense_adj
 import torch_geometric.transforms as T
-from metrics import classification_binary_metrics, classification_multiclass_metrics
+from metrics import classification_binary_metrics, classification_multiclass_metrics, classification_multilabel_metrics
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
 from models.model import Classifier, MultilayerGIN
@@ -45,7 +45,7 @@ def train_epoch():
                 data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.long())
+        loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
 
         loss.backward()
@@ -59,11 +59,13 @@ def train_epoch():
         # Riemennian Optimization
         optimizer.step()
 
-        if dataset.num_classes == 2:
+        if task == 'binary':
             acc, auroc = classification_binary_metrics(probs, data.y.int())
-        else:
-
+        elif task == 'multiclass':
             acc, auroc = classification_multiclass_metrics(
+                probs, data.y.int(), dataset.num_classes)
+        elif task == 'multilabel':
+            acc, auroc = classification_multilabel_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
         epoch_loss += loss.item()
@@ -89,12 +91,15 @@ def val_epoch():
                 data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.long())
+        loss = loss_function(logits, data.y.float())
 
-        if dataset.num_classes == 2:
+        if task == 'binary':
             acc, auc = classification_binary_metrics(probs, data.y.int())
-        else:
+        elif task == 'multiclass':
             acc, auc = classification_multiclass_metrics(
+                probs, data.y.int(), dataset.num_classes)
+        elif task == 'multilabel':
+            acc, auc = classification_multilabel_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
         epoch_loss += loss.item()
@@ -117,10 +122,13 @@ def test():
         if task == 'binary':
             data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
-        if dataset.num_classes == 2:
+        if task == 'binary' == 2:
             acc, auc = classification_binary_metrics(probs, data.y.int())
-        else:
+        elif task == 'multiclass':
             acc, auc = classification_multiclass_metrics(
+                probs, data.y.int(), dataset.num_classes)
+        elif task == 'multilabel':
+            acc, auc = classification_multilabel_metrics(
                 probs, data.y.int(), dataset.num_classes)
 
         test_acc += acc.item()
@@ -198,6 +206,7 @@ if __name__ == '__main__':
         dataset = TUDataset(root=collab, name='COLLAB')
     elif inp_name == 'mutag':
         dataset = TUDataset(root=mutag, name='MUTAG', use_node_attr=True)
+        task = 'binary'
     elif inp_name == 'proteins':
         dataset = TUDataset(root=proteins, name='PROTEINS')
         task = 'binary'
@@ -209,6 +218,7 @@ if __name__ == '__main__':
         task = 'multiclass'
     elif inp_name == 'clintox':
         dataset = MoleculeNet(root=clintox, name='ClinTox')
+        task = 'multilabel'
     elif inp_name == 'bbbp':
         dataset = MoleculeNet(root=bbbp, name='BBBP',
                               transform=(T.RemoveIsolatedNodes()))
@@ -223,11 +233,11 @@ if __name__ == '__main__':
         task = 'multiclass'
 
     dataset.shuffle()
-    train_ratio = 0.70
-    validation_ratio = 0.15
-    test_ratio = 0.15
+    train_ratio = 0.80
+    validation_ratio = 0.10
+    test_ratio = 0.10
     params = {
-        'batch_size': 128,
+        'batch_size': 256,
         'shuffle': True,
         'num_workers': 0
     }
@@ -246,13 +256,13 @@ if __name__ == '__main__':
 
     # model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
     #                    )
-    model = MultilayerGIN(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN,
+    model = MultilayerGIN(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, task=task, num_classes=dataset.num_classes, c_in=C_IN,
                           c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS)
     optimizer = RiemannianAdam(
         params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
         optimizer=optimizer, T_0=50)
-    if dataset.num_classes == 2:
+    if task == 'binary' or task == 'multilabel':
         loss_function = nn.BCEWithLogitsLoss()
     else:
         loss_function = nn.CrossEntropyLoss()

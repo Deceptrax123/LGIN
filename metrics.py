@@ -26,3 +26,10 @@ def classification_multiclass_metrics(predictions, labels, num_classes):
     #                        average='micro')(predictions, labels)
 
     return accuracy, auroc
+
+
+def classification_multilabel_metrics(predictions, labels, num_classes):
+    accuracy = MultilabelAccuracy(num_labels=num_classes)(predictions, labels)
+    auroc = MultilabelAUROC(num_labels=num_classes)(predictions, labels)
+
+    return accuracy, auroc

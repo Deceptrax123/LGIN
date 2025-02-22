@@ -8,17 +8,17 @@ from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax, Line
 
 
 class Classifier(Module):
-    def __init__(self, eps, num_layers_mlp, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias):
+    def __init__(self, eps, num_layers_mlp, task, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias):
         super(Classifier, self).__init__()
 
         self.manifold = getattr(manifolds, 'Lorentzian')()
         self.c_out = c_out
-        if num_classes == 2:
+        if task == 'binary' or task == 'multilabel':
             act = Sigmoid()
-            self.final_out = 2
+            self.final_out = num_classes
         else:
             act = Softmax(dim=1)
-            self.final_out = num_classes+1
+            self.final_out = num_classes
         self.gin = LorentzGIN(
             manifold=self.manifold,
             eps=eps,
@@ -57,17 +57,14 @@ class Classifier(Module):
 
 
 class MultilayerGIN(Module):
-    def __init__(self, eps, num_layers_mlp, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias):
+    def __init__(self, eps, num_layers_mlp, task, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias):
         super(MultilayerGIN, self).__init__()
         self.manifold = getattr(manifolds, 'Lorentzian')()
         self.c_out = c_out
         self.c_in = c_in
-        if num_classes == 1:
+        if task == 'binary' or task == 'multilabel':
             act = Sigmoid()
-            self.final_out = num_classes+1
-        elif num_classes == 2:
-            act = Sigmoid()
-            self.final_out = num_classes-1
+            self.final_out = num_classes
         else:
             act = Softmax(dim=1)
             self.final_out = num_classes
