@@ -22,6 +22,7 @@ def main():
     sider = os.getenv('sider')
     tox21 = os.getenv('tox21')
     bace = os.getenv('bace')
+    cast = os.getenv('toxcast')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -51,6 +52,8 @@ def main():
         dataset = MoleculeNet(root=tox21, name='Tox21')
     elif inp_name == 'bace':
         dataset = MoleculeNet(root=bace, name='BACE')
+    elif inp_name == 'toxcast':
+        dataset = MoleculeNet(root=cast, name='ToxCast')
 
 
 main()

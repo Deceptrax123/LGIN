@@ -178,7 +178,7 @@ def training_loop():
                 "Test AUC": test_auc
             })
 
-            if (epoch+1) % 50 == 0:
+            if (epoch+1) % 10 == 0:
                 save_path = os.getenv(
                     f"{inp_name}_weights")+f"/Run_1/model_{epoch+1}.pt"
                 # Save weights here
@@ -203,6 +203,7 @@ if __name__ == '__main__':
     sider = os.getenv('sider')
     tox21 = os.getenv('tox21')
     bace = os.getenv('bace')
+    cast = os.getenv('toxcast')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -248,6 +249,9 @@ if __name__ == '__main__':
         dataset = MoleculeNet(root=bace, name='BACE', transform=T.Compose(
             [T.RemoveIsolatedNodes()]))
         task = 'binary'
+    elif inp_name == 'toxcast':
+        dataset = MoleculeNet(root=cast, name='ToxCast', transform=T.Compose(
+            [T.RemoveIsolatedNodes()]))
 
     dataset.shuffle()
     train_ratio = 0.80
