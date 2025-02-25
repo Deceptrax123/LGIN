@@ -20,6 +20,8 @@ def main():
     bbbp = os.getenv('bbbp')
     hiv = os.getenv('hiv')
     sider = os.getenv('sider')
+    tox21 = os.getenv('tox21')
+    bace = os.getenv('bace')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -44,7 +46,11 @@ def main():
     elif inp_name == 'hiv':
         dataset = MoleculeNet(root=hiv, name='HIV')
     elif inp_name == 'sider':
-        dataaset = MoleculeNet(root=sider, name='SIDER')
+        dataset = MoleculeNet(root=sider, name='SIDER')
+    elif inp_name == 'tox21':
+        dataset = MoleculeNet(root=tox21, name='Tox21')
+    elif inp_name == 'bace':
+        dataset = MoleculeNet(root=bace, name='BACE')
 
 
 main()

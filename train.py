@@ -35,6 +35,8 @@ def train_epoch():
         if dataset.num_node_features == 0:
             data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
+        # if task == 'binary' and dataset.num_classes == 2:
+        #     data.y = data.y.argmax(dim=1)
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
         # weights = compute_class_weights(data.y)
@@ -44,7 +46,6 @@ def train_epoch():
             if data.y.size() == (data.y.size(0),):
                 data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
-
         loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
 
@@ -84,11 +85,14 @@ def val_epoch():
         if dataset.num_node_features == 0:
             data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
+        # if task == 'binary' and dataset.num_classes == 2:
+        #     data.y = data.y.argmax(dim=1)
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
         if task == 'binary':
             if data.y.size() == (data.y.size(0),):
                 data.y = data.y.view(data.y.size(0), 1)
+
         logits, probs = model(input, batch=data.batch)
 
         loss = loss_function(logits, data.y.float())
@@ -117,12 +121,14 @@ def test():
         if dataset.num_node_features == 0:
             data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        x, adj = data.x.float(), data.edge_index
-        input = (x, adj)
+        # if task == 'binary' and dataset.num_classes == 2:
+        #     data.y = data.y.argmax(dim=1)
         if task == 'binary':
             data.y = data.y.view(data.y.size(0), 1)
+        x, adj = data.x.float(), data.edge_index
+        input = (x, adj)
         logits, probs = model(input, batch=data.batch)
-        if task == 'binary' == 2:
+        if task == 'binary':
             acc, auc = classification_binary_metrics(probs, data.y.int())
         elif task == 'multiclass':
             acc, auc = classification_multiclass_metrics(
@@ -195,6 +201,8 @@ if __name__ == '__main__':
     bbbp = os.getenv('bbbp')
     hiv = os.getenv('hiv')
     sider = os.getenv('sider')
+    tox21 = os.getenv('tox21')
+    bace = os.getenv('bace')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -217,7 +225,8 @@ if __name__ == '__main__':
                             transform=(T.RemoveIsolatedNodes()))
         task = 'multiclass'
     elif inp_name == 'clintox':
-        dataset = MoleculeNet(root=clintox, name='ClinTox')
+        dataset = MoleculeNet(root=clintox, name='ClinTox',
+                              transform=T.RemoveIsolatedNodes())
         task = 'multilabel'
     elif inp_name == 'bbbp':
         dataset = MoleculeNet(root=bbbp, name='BBBP',
@@ -230,7 +239,15 @@ if __name__ == '__main__':
     elif inp_name == 'sider':
         dataset = MoleculeNet(root=sider, name='SIDER', transform=(
             T.RemoveIsolatedNodes()))
-        task = 'multiclass'
+        task = 'multilabel'
+    elif inp_name == 'tox21':
+        dataset = MoleculeNet(root=tox21, name='Tox21', transform=T.Compose(
+            [T.RemoveIsolatedNodes()]))
+        task = 'multilabel'
+    elif inp_name == 'bace':
+        dataset = MoleculeNet(root=bace, name='BACE', transform=T.Compose(
+            [T.RemoveIsolatedNodes()]))
+        task = 'binary'
 
     dataset.shuffle()
     train_ratio = 0.80
@@ -239,8 +256,13 @@ if __name__ == '__main__':
     params = {
         'batch_size': 256,
         'shuffle': True,
-        'num_workers': 0
+        'num_workers': 0,
     }
+
+    if dataset.num_node_features == 0:
+        num_in_features = 2
+    else:
+        num_in_features = dataset.num_node_features
 
     # model instantiation here->
     train_set, test_set = train_test_split(dataset, test_size=1 - train_ratio)
@@ -249,10 +271,6 @@ if __name__ == '__main__':
     train_loader = DataLoader(train_set, **params)
     val_loader = DataLoader(val_set, **params)
     test_loader = DataLoader(test_set, **params)
-    if dataset.num_node_features == 0:
-        num_in_features = 2
-    else:
-        num_in_features = dataset.num_node_features
 
     # model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
     #                    )

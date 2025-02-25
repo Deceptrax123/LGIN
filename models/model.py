@@ -62,7 +62,10 @@ class MultilayerGIN(Module):
         self.manifold = getattr(manifolds, 'Lorentzian')()
         self.c_out = c_out
         self.c_in = c_in
-        if task == 'binary' or task == 'multilabel':
+        if task == 'binary' and num_classes == 2:
+            act = Sigmoid()
+            self.final_out = 1
+        elif task == 'binary' or task == 'multilabel':
             act = Sigmoid()
             self.final_out = num_classes
         else:
