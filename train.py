@@ -33,7 +33,7 @@ def train_epoch():
     epoch_auc = 0
     for step, data in enumerate(train_loader):
         if dataset.num_node_features == 0:
-            data.x = torch.ones(
+            data.x = torch.zeros(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         # if task == 'binary' and dataset.num_classes == 2:
         #     data.y = data.y.argmax(dim=1)
@@ -83,7 +83,7 @@ def val_epoch():
     epoch_auc = 0
     for step, data in enumerate(val_loader):
         if dataset.num_node_features == 0:
-            data.x = torch.ones(
+            data.x = torch.zeros(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         # if task == 'binary' and dataset.num_classes == 2:
         #     data.y = data.y.argmax(dim=1)
@@ -119,7 +119,7 @@ def test():
     test_auc = 0
     for step, data in enumerate(test_loader):
         if dataset.num_node_features == 0:
-            data.x = torch.ones(
+            data.x = torch.zeros(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         # if task == 'binary' and dataset.num_classes == 2:
         #     data.y = data.y.argmax(dim=1)
@@ -204,6 +204,8 @@ if __name__ == '__main__':
     tox21 = os.getenv('tox21')
     bace = os.getenv('bace')
     cast = os.getenv('toxcast')
+    nci1 = os.getenv('nci1')
+    ptc = os.getenv('ptc')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -213,6 +215,7 @@ if __name__ == '__main__':
             root=reddit_b, name='REDDIT-BINARY')
     elif inp_name == 'collab':
         dataset = TUDataset(root=collab, name='COLLAB')
+        task = 'multiclass'
     elif inp_name == 'mutag':
         dataset = TUDataset(root=mutag, name='MUTAG', use_node_attr=True)
         task = 'binary'
@@ -252,23 +255,29 @@ if __name__ == '__main__':
     elif inp_name == 'toxcast':
         dataset = MoleculeNet(root=cast, name='ToxCast', transform=T.Compose(
             [T.RemoveIsolatedNodes()]))
+        task = 'multilabel'
+    elif inp_name == 'nci1':
+        dataset = TUDataset(root=nci1, name='NCI1')
+        task = 'binary'
+    elif inp_name == 'ptc':
+        dataset = TUDataset(root=ptc, name='PTC_MR')
+        task = 'binary'
 
     dataset.shuffle()
     train_ratio = 0.80
     validation_ratio = 0.10
     test_ratio = 0.10
     params = {
-        'batch_size': 256,
+        'batch_size': 512,
         'shuffle': True,
         'num_workers': 0,
     }
-
     if dataset.num_node_features == 0:
         num_in_features = 2
     else:
         num_in_features = dataset.num_node_features
 
-    # model instantiation here->
+    # model instantiation here ->
     train_set, test_set = train_test_split(dataset, test_size=1 - train_ratio)
     val_set, test_set = train_test_split(
         test_set, test_size=test_ratio/(test_ratio + validation_ratio))

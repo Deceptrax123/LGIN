@@ -1,4 +1,4 @@
-from torch_geometric.datasets import TUDataset, MoleculeNet
+from torch_geometric.datasets import TUDataset, MoleculeNet, ZINC, AQSOL
 import torch_geometric.transforms as T
 import os
 from dotenv import load_dotenv
@@ -23,6 +23,10 @@ def main():
     tox21 = os.getenv('tox21')
     bace = os.getenv('bace')
     cast = os.getenv('toxcast')
+    nci1 = os.getenv('nci1')
+    ptc = os.getenv('ptc')
+    zinc = os.getenv('zinc')
+    aqsol = os.getenv('aqsol')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -54,6 +58,18 @@ def main():
         dataset = MoleculeNet(root=bace, name='BACE')
     elif inp_name == 'toxcast':
         dataset = MoleculeNet(root=cast, name='ToxCast')
+    elif inp_name == 'nci1':
+        dataset = TUDataset(root=nci1, name='NCI1')
+    elif inp_name == 'ptc':
+        dataset = TUDataset(root=ptc, name='PTC_MR')
+    elif inp_name == 'zinc':
+        train_set = ZINC(root=zinc, split='train')
+        val_set = ZINC(root=zinc, split='val')
+        test_set = ZINC(root=zinc, split='test')
+    elif inp_name == 'aqsol':
+        train_set = AQSOL(root=aqsol, split='train')
+        val_set = AQSOL(root=aqsol, split='val')
+        test_set = AQSOL(root=aqsol, split='test')
 
 
 main()
