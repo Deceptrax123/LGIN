@@ -46,7 +46,7 @@ def train_epoch():
             if data.y.size() == (data.y.size(0),):
                 data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y.long())
         # print(logits[:, 1:30])
 
         loss.backward()
@@ -95,7 +95,7 @@ def val_epoch():
 
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y.long())
 
         if task == 'binary':
             acc, auc = classification_binary_metrics(probs, data.y.int())
@@ -180,7 +180,7 @@ def training_loop():
 
             if (epoch+1) % 10 == 0:
                 save_path = os.getenv(
-                    f"{inp_name}_weights")+f"/Run_1/model_{epoch+1}.pt"
+                    f"{inp_name}_weights")+f"/Run_2/model_{epoch+1}.pt"
                 # Save weights here
                 torch.save(model.state_dict(), save_path)
 
@@ -268,7 +268,7 @@ if __name__ == '__main__':
     validation_ratio = 0.10
     test_ratio = 0.10
     params = {
-        'batch_size': 512,
+        'batch_size': 128,
         'shuffle': True,
         'num_workers': 0,
     }

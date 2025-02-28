@@ -154,9 +154,12 @@ if __name__ == '__main__':
         val_set = ZINC(root=zinc, split='val')
         test_set = ZINC(root=zinc, split='test')
     elif inp_name == 'aqsol':
-        train_set = AQSOL(root=aqsol, split='train')
-        val_set = AQSOL(root=aqsol, split='val')
-        test_set = AQSOL(root=aqsol, split='test')
+        train_set = AQSOL(root=aqsol, split='train',
+                          transform=(T.RemoveIsolatedNodes()))
+        val_set = AQSOL(root=aqsol, split='val',
+                        transform=(T.RemoveIsolatedNodes()))
+        test_set = AQSOL(root=aqsol, split='test',
+                         transform=(T.RemoveIsolatedNodes()))
 
     params = {
         'batch_size': 512,
