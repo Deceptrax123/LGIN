@@ -32,10 +32,13 @@ def train_epoch():
 
     for step, data in enumerate(train_loader):
         x, adj = data.x.float(), data.edge_index
+        x = x.view(x.size(0), 1)
+        data.y = data.y.view(data.y.size(0), 1)
         input = (x, adj)
 
+        # Since one dimensional features
         optimizer.zero_grad()
-        logits, _ = model(input, batch=data.batch)
+        logits = model(input, batch=data.batch)
         loss = loss_function(logits, data.y.float())
 
         loss.backward()
@@ -62,11 +65,12 @@ def val_epoch():
     epoch_loss = 0
     mae = 0
     for step, data in enumerate(val_loader):
-
         x, adj = data.x.float(), data.edge_index
+        x = x.view(x.size(0), 1)
+        data.y = data.y.view(data.y.size(0), 1)
         input = (x, adj)
 
-        logits, _ = model(input, batch=data.batch)
+        logits = model(input, batch=data.batch)
 
         loss = loss_function(logits, data.y.float())
 
@@ -80,19 +84,20 @@ def val_epoch():
 @torch.no_grad()
 def test():
     epoch_loss = 0
-    epoch_acc = 0
-    epoch_auc = 0
+    mae = 0
     for step, data in enumerate(test_loader):
         x, adj = data.x.float(), data.edge_index
+        x = x.view(x.size(0), 1)
+        data.y = data.y.view(data.y.size(0), 1)
         input = (x, adj)
 
-        logits, _ = model(input, batch=data.batch)
+        logits = model(input, batch=data.batch)
 
         loss = loss_function(logits, data.y.float())
 
         epoch_loss += loss.item()
 
-        mae += l1_loss(logits, data.y.float())
+        mae += l1_loss(logits, data.y.float()).item()
 
     return epoch_loss/(step+1), mae/(step+1)
 
