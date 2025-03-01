@@ -178,11 +178,11 @@ def training_loop():
                 "Test AUC": test_auc
             })
 
-            if (epoch+1) % 10 == 0:
-                save_path = os.getenv(
-                    f"{inp_name}_weights")+f"/Run_2/model_{epoch+1}.pt"
-                # Save weights here
-                torch.save(model.state_dict(), save_path)
+            # if (epoch+1) % 10 == 0:
+            #     save_path = os.getenv(
+            #         f"{inp_name}_weights")+f"/Run_2/model_{epoch+1}.pt"
+            #     # Save weights here
+            #     torch.save(model.state_dict(), save_path)
 
 
 if __name__ == '__main__':
@@ -226,7 +226,7 @@ if __name__ == '__main__':
         dataset = TUDataset(root=proteins_full, name='PROTEINS_full')
     elif inp_name == 'enzymes':
         dataset = TUDataset(root=enzymes, name='ENZYMES',
-                            transform=(T.RemoveIsolatedNodes()))
+                            transform=(T.RemoveIsolatedNodes()), use_node_attr=True)
         task = 'multiclass'
     elif inp_name == 'clintox':
         dataset = MoleculeNet(root=clintox, name='ClinTox',

@@ -27,6 +27,7 @@ def main():
     ptc = os.getenv('ptc')
     zinc = os.getenv('zinc')
     aqsol = os.getenv('aqsol')
+    dd = os.getenv('dd')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -70,6 +71,8 @@ def main():
         train_set = AQSOL(root=aqsol, split='train')
         val_set = AQSOL(root=aqsol, split='val')
         test_set = AQSOL(root=aqsol, split='test')
+    elif inp_name == 'dd':
+        dataset = TUDataset(root=dd, name='DD')
 
 
 main()

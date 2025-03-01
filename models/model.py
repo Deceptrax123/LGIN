@@ -101,31 +101,31 @@ class MultilayerGIN(Module):
             use_att=use_att,
             use_bias=use_bias
         )
-        self.gin_4 = LorentzGIN(
-            manifold=self.manifold,
-            eps=eps,
-            in_features=512-1,
-            c_in=self.c_in,
-            nn=GinMLP(
-                num_layers=num_layers_mlp, c=self.c_out, in_features=512-1, dropout=dropout, use_bias=use_bias, out_dim=1024),
-            use_att=True,
-            use_bias=True
-        )
-        self.act_1 = LorentzAct(manifold=self.manifold,
-                                c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        self.act_2 = LorentzAct(manifold=self.manifold,
-                                c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        self.act_3 = LorentzAct(manifold=self.manifold,
-                                c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        self.act_4 = LorentzAct(manifold=self.manifold,
-                                c_in=self.c_out, c_out=self.c_out, act=ReLU())
+        # self.gin_4 = LorentzGIN(
+        #     manifold=self.manifold,
+        #     eps=eps,
+        #     in_features=512-1,
+        #     c_in=self.c_in,
+        #     nn=GinMLP(
+        #         num_layers=num_layers_mlp, c=self.c_out, in_features=512-1, dropout=dropout, use_bias=use_bias, out_dim=1024),
+        #     use_att=True,
+        #     use_bias=True
+        # )
+        # self.act_1 = LorentzAct(manifold=self.manifold,
+        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
+        # self.act_2 = LorentzAct(manifold=self.manifold,
+        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
+        # self.act_3 = LorentzAct(manifold=self.manifold,
+        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
+        # self.act_4 = LorentzAct(manifold=self.manifold,
+        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
 
         # self.classifier = LorentzLinear(
         #     self.manifold, in_features=512-1, out_features=self.final_out, c=self.c_out, dropout=dropout, use_bias=use_bias)
         # self.prob = LorentzAct(
         #     self.manifold, c_in=self.c_out, c_out=self.c_out, act=act)
         self.classifier = Linear(
-            in_features=1024, out_features=self.final_out)
+            in_features=512, out_features=self.final_out)
         self.prob = act
 
     def forward(self, input, batch):
@@ -136,7 +136,7 @@ class MultilayerGIN(Module):
         h = self.gin_1.forward(input)
         h = self.gin_2.forward(input=(h, edge_index))
         h = self.gin_3.forward(input=(h, edge_index))
-        h = self.gin_4.forward(input=(h, edge_index))
+        # h = self.gin_4.forward(input=(h, edge_index))
 
         h_tangential = self.manifold.proj_tan0(
             self.manifold.log_map_zero(h, c=self.c_out), c=self.c_out)

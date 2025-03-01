@@ -179,7 +179,7 @@ if __name__ == '__main__':
         params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
         optimizer=optimizer, T_0=50)
-    loss_function = nn.SmoothL1Loss()
+    loss_function = nn.L1Loss()
 
     wandb.init(
         project="Lorentzian Graph Isomorphism Network"
