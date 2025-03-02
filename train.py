@@ -46,7 +46,7 @@ def train_epoch():
             if data.y.size() == (data.y.size(0),):
                 data.y = data.y.view(data.y.size(0), 1)
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.long())
+        loss = loss_function(logits, data.y.float())
         # print(logits[:, 1:30])
 
         loss.backward()
@@ -95,7 +95,7 @@ def val_epoch():
 
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.long())
+        loss = loss_function(logits, data.y.float())
 
         if task == 'binary':
             acc, auc = classification_binary_metrics(probs, data.y.int())
@@ -206,6 +206,7 @@ if __name__ == '__main__':
     cast = os.getenv('toxcast')
     nci1 = os.getenv('nci1')
     ptc = os.getenv('ptc')
+    dd = os.getenv('dd')
 
     if inp_name == 'imdb_b':
         dataset = TUDataset(
@@ -261,6 +262,9 @@ if __name__ == '__main__':
         task = 'binary'
     elif inp_name == 'ptc':
         dataset = TUDataset(root=ptc, name='PTC_MR')
+        task = 'binary'
+    elif inp_name == 'dd':
+        dataset = TUDataset(root=dd, name='DD')
         task = 'binary'
 
     dataset.shuffle()
