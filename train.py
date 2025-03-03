@@ -35,19 +35,20 @@ def train_epoch():
         if dataset.num_node_features == 0:
             data.x = torch.zeros(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        # if task == 'binary' and dataset.num_classes == 2:
-        #     data.y = data.y.argmax(dim=1)
+
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-        # weights = compute_class_weights(data.y)
 
         optimizer.zero_grad()
         if task == 'binary':
+            data.y = data.y.float()
             if data.y.size() == (data.y.size(0),):
                 data.y = data.y.view(data.y.size(0), 1)
+        else:
+            data.y = data.y.long()
         logits, probs = model(input, batch=data.batch)
-        loss = loss_function(logits, data.y.float())
-        # print(logits[:, 1:30])
+
+        loss = loss_function(logits, data.y)
 
         loss.backward()
 
@@ -85,13 +86,15 @@ def val_epoch():
         if dataset.num_node_features == 0:
             data.x = torch.zeros(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        # if task == 'binary' and dataset.num_classes == 2:
-        #     data.y = data.y.argmax(dim=1)
+
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
         if task == 'binary':
+            data.y = data.y.float()
             if data.y.size() == (data.y.size(0),):
                 data.y = data.y.view(data.y.size(0), 1)
+        else:
+            data.y = data.y.long()
 
         logits, probs = model(input, batch=data.batch)
 
@@ -121,13 +124,14 @@ def test():
         if dataset.num_node_features == 0:
             data.x = torch.zeros(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
-        # if task == 'binary' and dataset.num_classes == 2:
-        #     data.y = data.y.argmax(dim=1)
         if task == 'binary':
+            data.y = data.y.float()
             data.y = data.y.view(data.y.size(0), 1)
+        else:
+            data.y = data.y.long()
         x, adj = data.x.float(), data.edge_index
         input = (x, adj)
-        logits, probs = model(input, batch=data.batch)
+        _, probs = model(input, batch=data.batch)
         if task == 'binary':
             acc, auc = classification_binary_metrics(probs, data.y.int())
         elif task == 'multiclass':
@@ -272,7 +276,7 @@ if __name__ == '__main__':
     validation_ratio = 0.10
     test_ratio = 0.10
     params = {
-        'batch_size': 128,
+        'batch_size': 64,
         'shuffle': True,
         'num_workers': 0,
     }
