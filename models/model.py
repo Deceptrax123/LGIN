@@ -57,11 +57,15 @@ class Classifier(Module):
 
 
 class MultilayerGIN(Module):
-    def __init__(self, eps, num_layers_mlp, task, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias):
+    def __init__(self, eps, num_layers_mlp, task, num_classes, c_in, c_out, in_features, dropout, use_att, use_bias, training):
         super(MultilayerGIN, self).__init__()
         self.manifold = getattr(manifolds, 'Lorentzian')()
-        self.c_out = c_out
-        self.c_in = c_in
+        if training:
+            self.c_out = Parameter(torch.tensor(c_out))
+            self.c_in = Parameter(torch.tensor(c_in))
+        else:
+            self.c_out = c_out
+            self.c_in = c_in
         if task == 'binary' and num_classes == 2:
             act = Sigmoid()
             self.final_out = 1
@@ -77,7 +81,7 @@ class MultilayerGIN(Module):
             in_features=in_features,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=in_features, dropout=dropout, use_bias=use_bias, out_dim=128),
+                      in_features=in_features, dropout=dropout, use_bias=use_bias, out_dim=128, training=training),
             use_att=use_att,
             use_bias=use_bias
         )
@@ -87,7 +91,7 @@ class MultilayerGIN(Module):
             in_features=128-1,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=128-1, dropout=dropout, use_bias=use_bias, out_dim=256),
+                      in_features=128-1, dropout=dropout, use_bias=use_bias, out_dim=256, training=training),
             use_att=use_att,
             use_bias=use_bias
         )
@@ -97,33 +101,10 @@ class MultilayerGIN(Module):
             in_features=256-1,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=256-1, dropout=dropout, use_bias=use_bias, out_dim=512),
+                      in_features=256-1, dropout=dropout, use_bias=use_bias, out_dim=512, training=training),
             use_att=use_att,
             use_bias=use_bias
         )
-        # self.gin_4 = LorentzGIN(
-        #     manifold=self.manifold,
-        #     eps=eps,
-        #     in_features=512-1,
-        #     c_in=self.c_in,
-        #     nn=GinMLP(
-        #         num_layers=num_layers_mlp, c=self.c_out, in_features=512-1, dropout=dropout, use_bias=use_bias, out_dim=1024),
-        #     use_att=True,
-        #     use_bias=True
-        # )
-        # self.act_1 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        # self.act_2 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        # self.act_3 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        # self.act_4 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
-
-        # self.classifier = LorentzLinear(
-        #     self.manifold, in_features=512-1, out_features=self.final_out, c=self.c_out, dropout=dropout, use_bias=use_bias)
-        # self.prob = LorentzAct(
-        #     self.manifold, c_in=self.c_out, c_out=self.c_out, act=act)
         self.classifier = Linear(
             in_features=512, out_features=self.final_out)
         self.prob = act
@@ -149,18 +130,22 @@ class MultilayerGIN(Module):
 
 
 class MultilayerGINRegression(Module):
-    def __init__(self, eps, num_layers_mlp, c_in, c_out, in_features, dropout, use_att, use_bias):
+    def __init__(self, eps, num_layers_mlp, c_in, c_out, in_features, dropout, use_att, use_bias, training):
         super(MultilayerGINRegression, self).__init__()
         self.manifold = getattr(manifolds, 'Lorentzian')()
-        self.c_out = c_out
-        self.c_in = c_in
+        if training:
+            self.c_out = Parameter(torch.tensor(c_out))
+            self.c_in = c_in = Parameter(torch.tensor(c_in))
+        else:
+            self.c_out = c_out
+            self.c_in = c_in
         self.gin_1 = LorentzGIN(
             manifold=self.manifold,
             eps=eps,
             in_features=in_features,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=in_features, dropout=dropout, use_bias=use_bias, out_dim=128),
+                      in_features=in_features, dropout=dropout, use_bias=use_bias, out_dim=128, training=training),
             use_att=use_att,
             use_bias=use_bias
         )
@@ -170,7 +155,7 @@ class MultilayerGINRegression(Module):
             in_features=128-1,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=128-1, dropout=dropout, use_bias=use_bias, out_dim=256),
+                      in_features=128-1, dropout=dropout, use_bias=use_bias, out_dim=256, training=training),
             use_att=use_att,
             use_bias=use_bias
         )
@@ -180,28 +165,12 @@ class MultilayerGINRegression(Module):
             in_features=256-1,
             c_in=self.c_in,
             nn=GinMLP(num_layers=num_layers_mlp, c=self.c_out,
-                      in_features=256-1, dropout=dropout, use_bias=use_bias, out_dim=512),
+                      in_features=256-1, dropout=dropout, use_bias=use_bias, out_dim=512, training=training),
             use_att=use_att,
             use_bias=use_bias
         )
-        self.gin_4 = LorentzGIN(
-            manifold=self.manifold,
-            eps=eps,
-            in_features=512-1,
-            c_in=self.c_in,
-            nn=GinMLP(
-                num_layers=num_layers_mlp, c=self.c_out, in_features=512-1, dropout=dropout, use_bias=use_bias, out_dim=1024),
-            use_att=True,
-            use_bias=True
-        )
-        # self.act_1 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        # self.act_2 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
-        # self.act_3 = LorentzAct(manifold=self.manifold,
-        #                         c_in=self.c_out, c_out=self.c_out, act=ReLU())
         self.classifier = Linear(
-            in_features=1024, out_features=1)
+            in_features=512, out_features=1)
 
     def forward(self, input, batch):
         x, edge_index = input
@@ -211,7 +180,6 @@ class MultilayerGINRegression(Module):
         h = self.gin_1.forward(input)
         h = self.gin_2.forward(input=(h, edge_index))
         h = self.gin_3.forward(input=(h, edge_index))
-        h = self.gin_4.forward(input=(h, edge_index))
 
         h_tangential = self.manifold.proj_tan0(
             self.manifold.log_map_zero(h, c=self.c_out), c=self.c_out)
@@ -223,14 +191,17 @@ class MultilayerGINRegression(Module):
 
 
 class GinMLP(Module):
-    def __init__(self, num_layers, c, in_features, dropout, use_bias, out_dim):
+    def __init__(self, num_layers, c, in_features, dropout, use_bias, out_dim, training):
         super(GinMLP, self).__init__()
         assert num_layers > 0
         self.c = c
         self.manifold = getattr(manifolds, 'Lorentzian')()
-
-        self.curvatures = [torch.tensor([4.])
-                           for _ in range(num_layers)]
+        if training:
+            self.curvatures = [Parameter(
+                torch.tensor([4.])) for _ in range(num_layers)]
+        else:
+            self.curvatures = [torch.tensor([4.])
+                               for _ in range(num_layers)]
         self.curvatures.append(self.c)
         layers = []
         feat = out_dim

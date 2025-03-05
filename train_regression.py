@@ -1,15 +1,13 @@
 from torch_geometric.datasets import ZINC, AQSOL
 from torch_geometric.loader import DataLoader
-from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS
+from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE
 import torch_geometric.transforms as T
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
 from models.model import MultilayerGINRegression
-import matplotlib.pyplot as plt
 from torch.nn.functional import l1_loss
 import os
 from dotenv import load_dotenv
-import time
 from torch import nn
 import torch
 import wandb
@@ -174,7 +172,7 @@ if __name__ == '__main__':
     test_loader = DataLoader(test_set, **params)
 
     model = MultilayerGINRegression(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, c_in=C_IN,
-                                    c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS)
+                                    c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS, training=TRAINING_CURVATURE)
     optimizer = RiemannianAdam(
         params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(

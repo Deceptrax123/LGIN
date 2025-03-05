@@ -1,17 +1,14 @@
 from torch_geometric.datasets import TUDataset, MoleculeNet
 from torch_geometric.loader import DataLoader
-from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS
-from torch_geometric.utils import to_dense_adj
+from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE
 import torch_geometric.transforms as T
 from metrics import classification_binary_metrics, classification_multiclass_metrics, classification_multilabel_metrics
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
-from models.model import Classifier, MultilayerGIN
+from models.model import MultilayerGIN
 import wandb
-import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
-import time
 from torch import nn
 import torch
 
@@ -276,7 +273,7 @@ if __name__ == '__main__':
     validation_ratio = 0.10
     test_ratio = 0.10
     params = {
-        'batch_size': 64,
+        'batch_size': 128,
         'shuffle': True,
         'num_workers': 0,
     }
@@ -296,7 +293,7 @@ if __name__ == '__main__':
     # model = Classifier(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, num_classes=dataset.num_classes, c_in=C_IN, c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS
     #                    )
     model = MultilayerGIN(eps=EPS, num_layers_mlp=NUM_LAYERS_MLP, task=task, num_classes=dataset.num_classes, c_in=C_IN,
-                          c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS)
+                          c_out=C_OUT, in_features=num_in_features, dropout=DROPOUT, use_att=USE_ATT, use_bias=USE_BIAS, training=TRAINING_CURVATURE)
     optimizer = RiemannianAdam(
         params=model.parameters(), lr=LR, weight_decay=EPSILON)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
