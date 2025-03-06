@@ -1,6 +1,6 @@
 from torch_geometric.datasets import TUDataset, MoleculeNet
 from torch_geometric.loader import DataLoader
-from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE
+from hyperparameters import BATCH_SIZE, EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE
 import torch_geometric.transforms as T
 from metrics import classification_binary_metrics, classification_multiclass_metrics, classification_multilabel_metrics
 from sklearn.model_selection import train_test_split
@@ -273,7 +273,7 @@ if __name__ == '__main__':
     validation_ratio = 0.10
     test_ratio = 0.10
     params = {
-        'batch_size': 128,
+        'batch_size': BATCH_SIZE,
         'shuffle': True,
         'num_workers': 0,
     }
