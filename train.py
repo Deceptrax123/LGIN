@@ -95,7 +95,7 @@ def val_epoch():
 
         logits, probs = model(input, batch=data.batch)
 
-        loss = loss_function(logits, data.y.float())
+        loss = loss_function(logits, data.y)
 
         if task == 'binary':
             acc, auc = classification_binary_metrics(probs, data.y.int())
