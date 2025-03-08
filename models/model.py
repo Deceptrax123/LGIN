@@ -1,7 +1,7 @@
 import manifolds
 from layers.lgnn_layer import LorentzGIN
 from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
-from torch_geometric.nn import global_mean_pool, global_add_pool
+from torch_geometric.nn import global_add_pool
 import numpy as np
 import torch
 from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax, Linear
@@ -121,7 +121,7 @@ class MultilayerGIN(Module):
 
         h_tangential = self.manifold.proj_tan0(
             self.manifold.log_map_zero(h, c=self.c_out), c=self.c_out)
-        h_tangential_mean = global_mean_pool(h_tangential, batch)
+        h_tangential_mean = global_add_pool(h_tangential, batch)
 
         h_classify = self.classifier(h_tangential_mean)
         h_classify_prob = self.prob(h_classify)
@@ -135,7 +135,7 @@ class MultilayerGINRegression(Module):
         self.manifold = getattr(manifolds, 'Lorentzian')()
         if training:
             self.c_out = Parameter(torch.tensor(c_out))
-            self.c_in = c_in = Parameter(torch.tensor(c_in))
+            self.c_in = Parameter(torch.tensor(c_in))
         else:
             self.c_out = c_out
             self.c_in = c_in
@@ -183,7 +183,7 @@ class MultilayerGINRegression(Module):
 
         h_tangential = self.manifold.proj_tan0(
             self.manifold.log_map_zero(h, c=self.c_out), c=self.c_out)
-        h_tangential_mean = global_mean_pool(h_tangential, batch)
+        h_tangential_mean = global_add_pool(h_tangential, batch)
 
         h_classify = self.classifier(h_tangential_mean)
 
