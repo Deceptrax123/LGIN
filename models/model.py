@@ -4,7 +4,7 @@ from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
 from torch_geometric.nn import global_add_pool
 import numpy as np
 import torch
-from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax, Linear
+from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax, Linear, Tanh
 
 
 class Classifier(Module):
@@ -212,14 +212,14 @@ class GinMLP(Module):
                     LorentzLinear(manifold=self.manifold, in_features=in_features,
                                   out_features=feat, c=c_in, dropout=dropout, use_bias=use_bias),
                     LorentzAct(manifold=self.manifold, c_in=c_in,
-                               c_out=c_out, act=ReLU())
+                               c_out=c_out, act=Tanh())
                 )
             else:
                 block = Sequential(
                     LorentzLinear(manifold=self.manifold, in_features=feat-1,
                                   out_features=feat, c=c_in, dropout=dropout, use_bias=use_bias),
                     LorentzAct(manifold=self.manifold, c_in=c_in,
-                               c_out=c_out, act=ReLU())
+                               c_out=c_out, act=Tanh())
                 )
             layers.append(block)
         self.layers = Sequential(*layers)
