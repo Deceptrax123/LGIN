@@ -30,7 +30,7 @@ def train_epoch():
     epoch_auc = 0
     for step, data in enumerate(train_loader):
         if dataset.num_node_features == 0:
-            data.x = torch.zeros(
+            data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
 
         x, adj = data.x.float(), data.edge_index
@@ -81,7 +81,7 @@ def val_epoch():
     epoch_auc = 0
     for step, data in enumerate(val_loader):
         if dataset.num_node_features == 0:
-            data.x = torch.zeros(
+            data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
 
         x, adj = data.x.float(), data.edge_index
@@ -119,7 +119,7 @@ def test():
     test_auc = 0
     for step, data in enumerate(test_loader):
         if dataset.num_node_features == 0:
-            data.x = torch.zeros(
+            data.x = torch.ones(
                 (data.num_nodes, num_in_features), dtype=torch.float32)
         if task == 'binary':
             data.y = data.y.float()
@@ -215,6 +215,7 @@ if __name__ == '__main__':
     elif inp_name == 'reddit_b':
         dataset = TUDataset(
             root=reddit_b, name='REDDIT-BINARY')
+        task = 'binary'
     elif inp_name == 'collab':
         dataset = TUDataset(root=collab, name='COLLAB')
         task = 'multiclass'
@@ -278,7 +279,7 @@ if __name__ == '__main__':
         'num_workers': 0,
     }
     if dataset.num_node_features == 0:
-        num_in_features = 2
+        num_in_features = 10
     else:
         num_in_features = dataset.num_node_features
 
