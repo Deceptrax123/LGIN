@@ -12,7 +12,7 @@ fig = plt.figure(figsize=(8, 6), dpi=600)
 ax = fig.add_subplot(111, projection='3d')
 
 scatter = ax.scatter(x, y, z, c=z, cmap='cividis',
-                     s=100, edgecolor='k')
+                     s=100, marker='x')
 
 ax.set_xlabel('Curvature Type', labelpad=10)
 ax.set_ylabel('Transport Mode', labelpad=10)
@@ -31,4 +31,4 @@ ax.tick_params(
 cbar = fig.colorbar(scatter, ax=ax, pad=0.1)
 cbar.set_label('AUC Score')
 
-plt.savefig('Plots/plot.png')
+plt.savefig('statistical_tests/plot.png')
