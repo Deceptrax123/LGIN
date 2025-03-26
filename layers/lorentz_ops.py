@@ -124,7 +124,7 @@ class LorentzAgg(Module):
 
         return norm_adj
 
-    def lorentz_centroid(self, weight, x, c):
+    def lorentz_centroid(self, weight, x, c, adj):
         if self.use_att:
             sum_x = self.this_spmm(weight[0], weight[1], weight[2], x)
         else:
@@ -134,14 +134,17 @@ class LorentzAgg(Module):
         x_inner = self.manifold.l_inner(sum_x, sum_x)
         x_inner = torch.clamp(x_inner, min=1e-6)
 
-        coefficient = (c**0.5)/(torch.sqrt(torch.abs(x_inner))+1e-6)
+        coefficient = (c**0.5)/((torch.sqrt(torch.abs(x_inner)) +
+                                1e-6)*(torch.sparse.sum(adj)))
 
         return torch.mul(coefficient, sum_x.transpose(-2, -1)).transpose(-2, -1)
 
     def forward(self, x, adj):
         if self.use_att:
-            adj = self.att(x, adj)
-        output = self.lorentz_centroid(adj, x, self.c)
+            adj_mod = self.att(x, adj)
+        else:
+            adj_mod = adj
+        output = self.lorentz_centroid(adj_mod, x, self.c, adj)
 
         return output
 
