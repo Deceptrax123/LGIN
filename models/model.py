@@ -1,10 +1,10 @@
 import manifolds
 from layers.lgin_layer import LorentzGIN
-from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
+from layers.lorentz_ops import LorentzAct, LorentzLinear
 from torch_geometric.nn import global_add_pool
 import numpy as np
 import torch
-from torch.nn import Module, Parameter, Sequential, ReLU, Sigmoid, Softmax, Linear, Tanh
+from torch.nn import Module, Parameter, Sequential, Sigmoid, Softmax, Linear, Tanh
 
 
 class Classifier(Module):

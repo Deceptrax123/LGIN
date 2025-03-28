@@ -2,7 +2,6 @@ from torch_geometric.datasets import ZINC, AQSOL
 from torch_geometric.loader import DataLoader
 from model_config import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE, BATCH_SIZE, SAVE_PATH
 import torch_geometric.transforms as T
-from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
 from models.model import MultilayerGINRegression
 from torch.nn.functional import l1_loss
