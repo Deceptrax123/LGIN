@@ -1,5 +1,5 @@
 import manifolds
-from layers.lgnn_layer import LorentzGIN
+from layers.lgin_layer import LorentzGIN
 from layers.lorentz_ops import LorentzAct, LorentzLinear, LorentzAgg
 from torch_geometric.nn import global_add_pool
 import numpy as np

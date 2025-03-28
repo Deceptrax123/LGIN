@@ -1,6 +1,6 @@
 from torch_geometric.datasets import TUDataset, MoleculeNet
 from torch_geometric.loader import DataLoader
-from hyperparameters import BATCH_SIZE, EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE
+from model_config import BATCH_SIZE, EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE, TRAIN_RATIO, VALIDATION_RATIO, TEST_RATIO, NUM_NODE_FEATURES, SAVE_PATH
 import torch_geometric.transforms as T
 from metrics import classification_binary_metrics, classification_multiclass_metrics, classification_multilabel_metrics
 from sklearn.model_selection import train_test_split
@@ -179,11 +179,12 @@ def training_loop():
                 "Test AUC": test_auc
             })
 
-            # if (epoch+1) % 10 == 0:
-            #     save_path = os.getenv(
-            #         f"{inp_name}_weights")+f"/Run_2/model_{epoch+1}.pt"
-            #     # Save weights here
-            #     torch.save(model.state_dict(), save_path)
+            if SAVE_PATH is not None:
+                # You may edit the metric for saving here such as test_acc[i]>test_acc[i-1]
+                if (epoch+1) % 10 == 0:
+                    save_path = SAVE_PATH+f"/Run_1/model_{epoch+1}.pt"
+                    # Save weights here
+                    torch.save(model.state_dict(), save_path)
 
 
 if __name__ == '__main__':
@@ -270,16 +271,16 @@ if __name__ == '__main__':
         task = 'binary'
 
     dataset.shuffle()
-    train_ratio = 0.80
-    validation_ratio = 0.10
-    test_ratio = 0.10
+    train_ratio = TRAIN_RATIO
+    validation_ratio = VALIDATION_RATIO
+    test_ratio = TEST_RATIO
     params = {
         'batch_size': BATCH_SIZE,
         'shuffle': True,
         'num_workers': 0,
     }
     if dataset.num_node_features == 0:
-        num_in_features = 10
+        num_in_features = NUM_NODE_FEATURES
     else:
         num_in_features = dataset.num_node_features
 

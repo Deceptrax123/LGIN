@@ -1,6 +1,6 @@
 from torch_geometric.datasets import ZINC, AQSOL
 from torch_geometric.loader import DataLoader
-from hyperparameters import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE
+from model_config import EPOCHS, EPSILON, LR, CLIP_VALUE, EPS, NUM_LAYERS_MLP, C_IN, C_OUT, DROPOUT, USE_ATT, USE_BIAS, TRAINING_CURVATURE, BATCH_SIZE, SAVE_PATH
 import torch_geometric.transforms as T
 from sklearn.model_selection import train_test_split
 from optimizers.radam import RiemannianAdam
@@ -132,11 +132,12 @@ def training_loop():
                 "Test MAE": test_mae
             })
 
-            if (epoch+1) % 10 == 0:
-                save_path = os.getenv(
-                    f"{inp_name}_weights")+f"/Run_1/model_{epoch+1}.pt"
-                # Save weights here
-                torch.save(model.state_dict(), save_path)
+            if SAVE_PATH is not None:
+                # You may edit the metric for saving here such as test_loss[i]<test_loss[i-1]
+                if (epoch+1) % 10 == 0:
+                    save_path = SAVE_PATH+f"/Run_1/model_{epoch+1}.pt"
+                    # Save weights here
+                    torch.save(model.state_dict(), save_path)
 
 
 if __name__ == '__main__':
@@ -160,7 +161,7 @@ if __name__ == '__main__':
                          transform=(T.RemoveIsolatedNodes()))
 
     params = {
-        'batch_size': 512,
+        'batch_size': BATCH_SIZE,
         'shuffle': True,
         'num_workers': 0,
     }
