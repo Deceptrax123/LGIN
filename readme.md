@@ -1,5 +1,5 @@
 # Lorentzian Graph Isomorphic Network
-Official code of our paper "Lorentzian Graph Isomorphic Network". The preprint will be linked once its out on ArXiv.
+Official code of our paper "Lorentzian Graph Isomorphic Network". The preprint can be found <a href="https://arxiv.org/abs/2504.00142">here</a>.
 
 ## Running the Scripts
 - Create a Python(preferrably >3.10) virtual environment and activate it. Run the following command
