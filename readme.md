@@ -1,5 +1,5 @@
 # Lorentzian Graph Isomorphic Network
-Official code of our paper "Lorentzian Graph Isomorphic Network". The preprint can be found <a href="https://arxiv.org/abs/2504.00142">here</a>.
+Official code of our paper "LGIN: Defining an Approximately Powerful Hyperbolic GNN"(Previously Lorentzian Graph Isomorphic Network) accepted at GRADES NDA Workshop. The preprint can be found <a href="https://arxiv.org/abs/2504.00142">here</a>.
 
 ## Description
 While graph neural networks (GNNs) operating in hyperbolic spaces have shown promise
