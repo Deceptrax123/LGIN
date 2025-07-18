@@ -1,5 +1,5 @@
-# Lorentzian Graph Isomorphic Network
-Official code of our paper Lorentzian Graph Isomorphic Network accepted at ACM SIGMOD 2025 GRADES NDA Workshop. The preprint can be found <a href="https://arxiv.org/abs/2504.00142">here</a>.
+# Easing the Injectivity Bottleneck on Lorentzian Manifolds for GNNs(Original title LGIN)
+Official code of our paper accpted at ACM SIGMOD 2025 GRADES NDA Workshop. The preprint can be found <a href="https://arxiv.org/abs/2504.00142">here</a>.
 
 Click <a href="https://gradesnda.github.io/">here</a> to go to the workshop page.
 
